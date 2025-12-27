@@ -78,6 +78,45 @@ class Nueva_Chatbot_Public
         ));
 
         add_action('wp_footer', array($this, 'render_chat_widget'));
+        add_shortcode('nueva_chat', array($this, 'render_shortcode'));
+    }
+
+    public function render_shortcode()
+    {
+        // Force enqueue assets even if should_render was false
+        wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/nueva-ai-chatbot-public.css', array('dashicons'), $this->version, 'all');
+        wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/nueva-chat-widget.js', array('jquery'), $this->version, false);
+
+        // Re-inject Dynamic CSS since enqueue_styles might have been skipped
+        $appearance = $this->options['appearance'];
+        $css = "
+            :root {
+                --nueva-primary: " . esc_attr($appearance['primary_color']) . ";
+                --nueva-secondary: " . esc_attr($appearance['secondary_color']) . ";
+                --nueva-font: '" . esc_attr($appearance['font_family']) . "', sans-serif;
+                --nueva-font-size: " . intval($appearance['font_size']) . "px;
+            }
+            .nueva-chat-widget {
+                " . ($appearance['position_desktop'] == 'left' ? 'left: 20px; right: auto;' : 'right: 20px; left: auto;') . "
+            }
+            @media (max-width: 600px) {
+                .nueva-chat-widget {
+                    " . ($appearance['position_mobile'] == 'left' ? 'left: 10px; right: auto;' : 'right: 10px; left: auto;') . "
+                }
+            }
+        ";
+        wp_add_inline_style($this->plugin_name, $css);
+
+        wp_localize_script($this->plugin_name, 'nueva_chat_vars', array(
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('nueva_chat_nonce'),
+            'agent_name' => esc_js($this->options['general']['agent_name']),
+            'profile_image' => esc_url($this->options['appearance']['profile_image'])
+        ));
+
+        ob_start();
+        $this->render_chat_widget();
+        return ob_get_clean();
     }
 
     private function should_render()
