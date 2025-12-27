@@ -14,7 +14,25 @@ class Nueva_Chatbot_Public
     {
         $this->plugin_name = $plugin_name;
         $this->version = $version;
-        $this->options = get_option('nueva_chat_options');
+
+        $defaults = [
+            'general' => ['api_key' => '', 'agent_name' => 'Nueva Agent', 'model' => 'gemini-1.5-pro'],
+            'appearance' => ['primary_color' => '#0073aa', 'secondary_color' => '#ffffff', 'font_family' => 'Roboto', 'font_size' => '16', 'position_desktop' => 'right', 'position_mobile' => 'right', 'profile_image' => ''],
+            'behavior' => ['tone' => 'professional', 'default_lang' => 'en', 'supported_langs' => 'en'],
+            'visibility' => ['include_pages' => [], 'exclude_pages' => []]
+        ];
+
+        $options = get_option('nueva_chat_options', []);
+
+        // Deep merge logic simplified for this structure
+        $this->options = $defaults;
+        if (is_array($options)) {
+            foreach ($defaults as $group => $settings) {
+                if (isset($options[$group]) && is_array($options[$group])) {
+                    $this->options[$group] = array_merge($settings, $options[$group]);
+                }
+            }
+        }
     }
 
     public function enqueue_styles()
