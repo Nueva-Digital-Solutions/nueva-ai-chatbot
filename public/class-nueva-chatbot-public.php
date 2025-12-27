@@ -129,13 +129,7 @@ class Nueva_Chatbot_Public
             return false;
         }
 
-        // 2. Include Logic (if not empty, strictly check)
-        if (!empty($visibility['include_pages'])) {
-            if (!in_array($current_id, $visibility['include_pages'])) {
-                return false;
-            }
-        }
-
+        // Default: Show everywhere
         return true;
     }
 

@@ -124,7 +124,6 @@ class Nueva_Chatbot_Admin
                 'supported_langs' => sanitize_text_field($_POST['nueva_supported_langs']),
             ),
             'visibility' => array(
-                'include_pages' => isset($_POST['nueva_include_pages']) ? array_map('intval', $_POST['nueva_include_pages']) : [],
                 'exclude_pages' => isset($_POST['nueva_exclude_pages']) ? array_map('intval', $_POST['nueva_exclude_pages']) : [],
             )
         );
