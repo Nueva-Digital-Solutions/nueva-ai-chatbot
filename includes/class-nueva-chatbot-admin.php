@@ -124,6 +124,7 @@ class Nueva_Chatbot_Admin
             ),
             'behavior' => array(
                 'tone' => sanitize_text_field($_POST['nueva_tone']),
+                'initial_message' => sanitize_textarea_field($_POST['nueva_initial_message']),
                 'default_lang' => sanitize_text_field($_POST['nueva_default_lang']),
                 'supported_langs' => sanitize_text_field($_POST['nueva_supported_langs']),
             ),

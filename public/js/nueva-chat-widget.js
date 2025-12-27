@@ -36,29 +36,28 @@ jQuery(document).ready(function ($) {
         scrollToBottom();
 
         // AJAX Call to Backend
-        // For now, simple echo or loading state
         $body.append('<div class="message bot typing">Thinking...</div>');
         scrollToBottom();
 
-        // Placeholder for future API integration
-        /*
         $.post(nueva_chat_vars.ajax_url, {
             action: 'nueva_chat_message',
             message: msg,
             nonce: nueva_chat_vars.nonce
-        }, function(response) {
+        }, function (response) {
             $('.typing').remove();
-            $body.append('<div class="message bot">' + response.data.reply + '</div>');
+            if (response.success) {
+                // Parse markdown if possible (simple replacement for now)
+                var reply = escapeHtml(response.data.reply).replace(/\n/g, '<br>');
+                $body.append('<div class="message bot">' + reply + '</div>');
+            } else {
+                $body.append('<div class="message bot error">Something went wrong.</div>');
+            }
+            scrollToBottom();
+        }).fail(function () {
+            $('.typing').remove();
+            $body.append('<div class="message bot error">Connection failed.</div>');
             scrollToBottom();
         });
-        */
-
-        // Temporary timeout to simulate response
-        setTimeout(function () {
-            $('.typing').remove();
-            $body.append('<div class="message bot">I am the Nueva AI Agent. My brain is not fully connected yet, but I hear you: ' + escapeHtml(msg) + '</div>');
-            scrollToBottom();
-        }, 1000);
     }
 
     function scrollToBottom() {

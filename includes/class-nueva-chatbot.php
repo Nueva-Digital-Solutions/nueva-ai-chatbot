@@ -31,8 +31,11 @@ class Nueva_Chatbot
         require_once plugin_dir_path(__FILE__) . 'class-nueva-chatbot-i18n.php';
         require_once plugin_dir_path(__FILE__) . 'class-nueva-chatbot-admin.php';
         require_once plugin_dir_path(dirname(__FILE__)) . 'public/class-nueva-chatbot-public.php';
+        require_once plugin_dir_path(__FILE__) . 'api/class-nueva-chatbot-api.php';
 
         $this->loader = new Nueva_Chatbot_Loader();
+        $this->api = new Nueva_Chatbot_API();
+        $this->api->register_routes();
     }
 
     private function set_locale()
