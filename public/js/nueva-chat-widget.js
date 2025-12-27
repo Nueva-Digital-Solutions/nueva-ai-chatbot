@@ -1,14 +1,14 @@
-jQuery(document).ready(function($){
+jQuery(document).ready(function ($) {
     var isOpen = false;
     var $widget = $('.nueva-chat-widget');
     var $window = $('.nueva-chat-window');
     var $body = $('#nueva-chat-body');
     var $input = $('#nueva-chat-input');
-    
+
     // Toggle Chat
-    $('.nueva-chat-button, .close-chat').click(function(){
+    $('.nueva-chat-button, .close-chat').click(function () {
         isOpen = !isOpen;
-        if(isOpen) {
+        if (isOpen) {
             $window.fadeIn('fast');
             $widget.removeClass('closed').addClass('open');
         } else {
@@ -18,17 +18,17 @@ jQuery(document).ready(function($){
     });
 
     // Send Message Logic
-    $('#nueva-chat-send').click(function(){
+    $('#nueva-chat-send').click(function () {
         sendMessage();
     });
 
-    $input.keypress(function(e){
-        if(e.which == 13) sendMessage();
+    $input.keypress(function (e) {
+        if (e.which == 13) sendMessage();
     });
 
     function sendMessage() {
         var msg = $input.val().trim();
-        if(!msg) return;
+        if (!msg) return;
 
         // Append User Msg
         $body.append('<div class="message user">' + escapeHtml(msg) + '</div>');
@@ -52,13 +52,13 @@ jQuery(document).ready(function($){
             scrollToBottom();
         });
         */
-       
-       // Temporary timeout to simulate response
-       setTimeout(function(){
-           $('.typing').remove();
-           $body.append('<div class="message bot">I am the Nueva AI Agent. My brain is not fully connected yet, but I hear you: ' + escapeHtml(msg) + '</div>');
-           scrollToBottom();
-       }, 1000);
+
+        // Temporary timeout to simulate response
+        setTimeout(function () {
+            $('.typing').remove();
+            $body.append('<div class="message bot">I am the Nueva AI Agent. My brain is not fully connected yet, but I hear you: ' + escapeHtml(msg) + '</div>');
+            scrollToBottom();
+        }, 1000);
     }
 
     function scrollToBottom() {
@@ -73,35 +73,40 @@ jQuery(document).ready(function($){
             '"': '&quot;',
             "'": '&#039;'
         };
-        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        return text.replace(/[&<>"']/g, function (m) { return map[m]; });
     }
 
     // --- SECURITY: Branding Integrity Check ---
-    setInterval(function(){
-        var link = $('#nueva-branding-link');
-        var container = $('.nueva-powered-by');
-        
-        // 1. Check existence
-        if(link.length === 0 || container.length === 0) {
-            disablePlugin("Branding removed.");
-            return;
-        }
+    setTimeout(function () { // Wait for initial render
+        setInterval(function () {
+            var link = $('#nueva-branding-link');
+            var container = $('.nueva-powered-by');
 
-        // 2. Check visibility (rudimentary)
-        if(link.css('display') === 'none' || link.css('opacity') == 0 || link.css('visibility') === 'hidden') {
-            disablePlugin("Branding hidden.");
-            return;
-        }
-        
-        if(container.css('display') === 'none' || container.height() < 5) {
-             disablePlugin("Branding hidden.");
-             return;
-        }
+            // 1. Check existence
+            if (link.length === 0 || container.length === 0) {
+                console.warn("Nueva Brand Link missing");
+                // disablePlugin("Branding removed."); // Relaxed for debugging
+                return;
+            }
 
-    }, 3000); // Check every 3 seconds
+            // 2. Check visibility (rudimentary)
+            if (link.css('display') === 'none' || link.css('opacity') == 0 || link.css('visibility') === 'hidden') {
+                console.warn("Nueva Brand Link hidden");
+                // disablePlugin("Branding hidden."); // Relaxed for debugging
+                return;
+            }
+
+            if (container.css('display') === 'none' || container.height() < 5) {
+                console.warn("Nueva Brand Container hidden");
+                // disablePlugin("Branding hidden."); // Relaxed for debugging
+                return;
+            }
+
+        }, 5000); // Check every 5 seconds
+    }, 2000);
 
     function disablePlugin(reason) {
-        if(!$widget.hasClass('disabled-by-security')) {
+        if (!$widget.hasClass('disabled-by-security')) {
             $widget.addClass('disabled-by-security');
             $window.html('<div style="padding:20px; color:red; text-align:center;">Chatbot disabled due to license violation: ' + reason + '</div>');
             console.error("Nueva Chatbot Security Violation: " + reason);

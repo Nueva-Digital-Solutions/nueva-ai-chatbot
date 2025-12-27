@@ -9,14 +9,14 @@
 .nueva-chat-button {
     width: 60px;
     height: 60px;
-    background-color: var(--nueva-primary);
+    background-color: var(--nueva-primary, #0073aa);
     border-radius: 50%;
-    color: var(--nueva-secondary);
+    color: var(--nueva-secondary, #ffffff);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     transition: transform 0.3s ease;
 }
 
@@ -37,11 +37,12 @@
     height: 500px;
     background: #fff;
     border-radius: 10px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
     display: none;
     flex-direction: column;
     overflow: hidden;
-    right: 0; /* Align with button default */
+    right: 0;
+    /* Align with button default */
 }
 
 /* Adjust window alignment based on button position context handled by JS/Logic if needed, 

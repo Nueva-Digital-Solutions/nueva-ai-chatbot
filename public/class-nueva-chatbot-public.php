@@ -68,7 +68,7 @@ class Nueva_Chatbot_Public
         if (!$this->should_render())
             return;
 
-        wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/nueva-chat-widget.js', array('jquery'), $this->version, false);
+        wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/nueva-chat-widget.js', array('jquery'), time(), false);
 
         wp_localize_script($this->plugin_name, 'nueva_chat_vars', array(
             'ajax_url' => admin_url('admin-ajax.php'),
