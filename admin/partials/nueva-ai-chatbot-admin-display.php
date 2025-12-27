@@ -132,6 +132,14 @@ $visibility = $options['visibility'];
                     </td>
                 </tr>
                 <tr>
+                    <th scope="row">Initial Welcome Message</th>
+                    <td>
+                        <textarea name="nueva_initial_message" class="large-text"
+                            rows="3"><?php echo isset($behavior['initial_message']) ? esc_textarea($behavior['initial_message']) : 'Hello! How can I help you today?'; ?></textarea>
+                        <p class="description">The first message the chatbot sends to the user.</p>
+                    </td>
+                </tr>
+                <tr>
                     <th scope="row">Default Language</th>
                     <td><input type="text" name="nueva_default_lang"
                             value="<?php echo esc_attr($behavior['default_lang']); ?>" class="regular-text"
@@ -148,20 +156,32 @@ $visibility = $options['visibility'];
 
         <!-- Visibility Tab -->
         <div id="tab-visibility" class="tab-content" style="display:none;">
-            <p>Select pages where the chatbot should appear.</p>
-            <!-- In a real scenario, we'd loop through all pages here. For now, simple input placeholder logic -->
+            <p>The chatbot is displayed on <strong>all pages</strong> by default. Select pages below to
+                <strong>hide</strong> it.</p>
+            <?php
+            // Fetch all pages and posts
+            $all_pages = get_posts([
+                'post_type' => ['page', 'post'],
+                'posts_per_page' => -1,
+                'post_status' => 'publish',
+                'orderby' => 'title',
+                'order' => 'ASC'
+            ]);
+            $excluded_ids = isset($visibility['exclude_pages']) && is_array($visibility['exclude_pages']) ? $visibility['exclude_pages'] : [];
+            ?>
             <table class="form-table">
                 <tr>
-                    <th scope="row">Include Pages (IDs)</th>
-                    <td><input type="text" name="nueva_include_pages[]"
-                            value="<?php echo implode(',', $visibility['include_pages']); ?>" class="regular-text"
-                            placeholder="1, 12, 45 (Leave empty for all)" /></td>
-                </tr>
-                <tr>
-                    <th scope="row">Exclude Pages (IDs)</th>
-                    <td><input type="text" name="nueva_exclude_pages[]"
-                            value="<?php echo implode(',', $visibility['exclude_pages']); ?>" class="regular-text"
-                            placeholder="99, 100" /></td>
+                    <th scope="row">Exclude on Pages/Posts</th>
+                    <td>
+                        <select name="nueva_exclude_pages[]" multiple style="height: 300px; width: 100%;">
+                            <?php foreach ($all_pages as $p): ?>
+                                <option value="<?php echo $p->ID; ?>" <?php echo in_array($p->ID, $excluded_ids) ? 'selected' : ''; ?>>
+                                    <?php echo esc_html($p->post_title); ?> (<?php echo ucfirst($p->post_type); ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="description">Hold Ctrl (Windows) or Command (Mac) to select multiple pages.</p>
+                    </td>
                 </tr>
             </table>
         </div>

@@ -24,7 +24,11 @@ class Nueva_Chatbot_Admin
 
     public function enqueue_scripts()
     {
-        wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . '../admin/js/nueva-ai-chatbot-admin.js', array('jquery', 'wp-color-picker'), $this->version, false);
+        wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . '../admin/js/nueva-ai-chatbot-admin.js', array('jquery', 'wp-color-picker', 'media-upload'), $this->version, false);
+        wp_localize_script($this->plugin_name, 'nueva_admin', array(
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('nueva_admin_nonce')
+        ));
     }
 
     public function add_plugin_admin_menu()
