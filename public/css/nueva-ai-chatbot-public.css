@@ -1,0 +1,152 @@
+.nueva-chat-widget {
+    position: fixed;
+    bottom: 20px;
+    z-index: 999999;
+    font-family: var(--nueva-font);
+    font-size: var(--nueva-font-size);
+}
+
+.nueva-chat-button {
+    width: 60px;
+    height: 60px;
+    background-color: var(--nueva-primary);
+    border-radius: 50%;
+    color: var(--nueva-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    transition: transform 0.3s ease;
+}
+
+.nueva-chat-button:hover {
+    transform: scale(1.1);
+}
+
+.nueva-chat-button .dashicons {
+    font-size: 30px;
+    width: 30px;
+    height: 30px;
+}
+
+.nueva-chat-window {
+    position: absolute;
+    bottom: 80px;
+    width: 350px;
+    height: 500px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    right: 0; /* Align with button default */
+}
+
+/* Adjust window alignment based on button position context handled by JS/Logic if needed, 
+   but parent relative positioning handles most cases */
+.nueva-chat-widget.left-aligned .nueva-chat-window {
+    left: 0;
+    right: auto;
+}
+
+.nueva-chat-header {
+    background-color: var(--nueva-primary);
+    color: var(--nueva-secondary);
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.agent-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: bold;
+}
+
+.agent-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #ccc;
+}
+
+.close-chat {
+    background: none;
+    border: none;
+    color: var(--nueva-secondary);
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.nueva-chat-body {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background: #f9f9f9;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.message {
+    max-width: 80%;
+    padding: 10px 15px;
+    border-radius: 15px;
+    font-size: 0.9em;
+    line-height: 1.4;
+}
+
+.message.bot {
+    align-self: flex-start;
+    background: #e9e9e9;
+    color: #333;
+    border-bottom-left-radius: 2px;
+}
+
+.message.user {
+    align-self: flex-end;
+    background: var(--nueva-primary);
+    color: var(--nueva-secondary);
+    border-bottom-right-radius: 2px;
+}
+
+.nueva-chat-footer {
+    padding: 10px;
+    border-top: 1px solid #eee;
+    background: #fff;
+}
+
+.nueva-chat-footer input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    margin-bottom: 5px;
+    box-sizing: border-box;
+}
+
+.nueva-chat-footer button {
+    width: 100%;
+    padding: 8px;
+    background: var(--nueva-primary);
+    color: var(--nueva-secondary);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.nueva-powered-by {
+    text-align: center;
+    font-size: 10px;
+    margin-top: 5px;
+}
+
+.nueva-powered-by a {
+    color: #999;
+    text-decoration: none;
+}
