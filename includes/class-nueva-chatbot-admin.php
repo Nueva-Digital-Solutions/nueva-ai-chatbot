@@ -17,14 +17,14 @@ class Nueva_Chatbot_Admin
 
     public function enqueue_styles()
     {
-        wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . '../../admin/css/nueva-ai-chatbot-admin.css', array(), $this->version, 'all');
+        wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . '../admin/css/nueva-ai-chatbot-admin.css', array(), $this->version, 'all');
         // Add color picker styles
         wp_enqueue_style('wp-color-picker');
     }
 
     public function enqueue_scripts()
     {
-        wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . '../../admin/js/nueva-ai-chatbot-admin.js', array('jquery', 'wp-color-picker'), $this->version, false);
+        wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . '../admin/js/nueva-ai-chatbot-admin.js', array('jquery', 'wp-color-picker'), $this->version, false);
     }
 
     public function add_plugin_admin_menu()
@@ -82,22 +82,22 @@ class Nueva_Chatbot_Admin
         if (isset($_POST['nueva_save_settings']) && check_admin_referer('nueva_chat_options_verify')) {
             $this->save_settings();
         }
-        require_once plugin_dir_path(__FILE__) . '../../admin/partials/nueva-ai-chatbot-admin-display.php';
+        require_once plugin_dir_path(__FILE__) . '../admin/partials/nueva-ai-chatbot-admin-display.php';
     }
 
     public function display_kb_page()
     {
-        require_once plugin_dir_path(__FILE__) . '../../admin/partials/nueva-ai-chatbot-kb-display.php';
+        require_once plugin_dir_path(__FILE__) . '../admin/partials/nueva-ai-chatbot-kb-display.php';
     }
 
     public function display_flows_page()
     {
-        require_once plugin_dir_path(__FILE__) . '../../admin/partials/nueva-ai-chatbot-flows-display.php';
+        require_once plugin_dir_path(__FILE__) . '../admin/partials/nueva-ai-chatbot-flows-display.php';
     }
 
     public function display_leads_page()
     {
-        require_once plugin_dir_path(__FILE__) . '../../admin/partials/nueva-ai-chatbot-leads-display.php';
+        require_once plugin_dir_path(__FILE__) . '../admin/partials/nueva-ai-chatbot-leads-display.php';
     }
 
     private function save_settings()

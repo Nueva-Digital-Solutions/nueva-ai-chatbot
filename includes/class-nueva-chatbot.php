@@ -30,7 +30,7 @@ class Nueva_Chatbot
         require_once plugin_dir_path(__FILE__) . 'class-nueva-chatbot-loader.php';
         require_once plugin_dir_path(__FILE__) . 'class-nueva-chatbot-i18n.php';
         require_once plugin_dir_path(__FILE__) . 'class-nueva-chatbot-admin.php';
-        require_once plugin_dir_path(__FILE__) . 'class-nueva-chatbot-public.php';
+        require_once plugin_dir_path(dirname(__FILE__)) . 'public/class-nueva-chatbot-public.php';
 
         $this->loader = new Nueva_Chatbot_Loader();
     }
