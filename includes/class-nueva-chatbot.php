@@ -33,10 +33,21 @@ class Nueva_Chatbot
         require_once plugin_dir_path(__FILE__) . 'class-nueva-chatbot-admin.php';
         require_once plugin_dir_path(dirname(__FILE__)) . 'public/class-nueva-chatbot-public.php';
         require_once plugin_dir_path(__FILE__) . 'api/class-nueva-chatbot-api.php';
+        require_once plugin_dir_path(__FILE__) . 'class-nueva-github-updater.php'; // Load Updater
 
         $this->loader = new Nueva_Chatbot_Loader();
         $this->api = new Nueva_Chatbot_API();
         $this->api->register_routes();
+
+        // Initialize GitHub Updater
+        // Params: Plugin File, User, Repo
+        if (is_admin()) {
+            new Nueva_Chatbot_Updater(
+                plugin_dir_path(dirname(__FILE__)) . 'nueva-ai-chatbot.php',
+                'Nueva-Digital-Solutions',
+                'nueva-ai-chatbot'
+            );
+        }
     }
 
     private function set_locale()
