@@ -22,15 +22,45 @@ if (isset($_POST['nueva_kb_action']) && check_admin_referer('nueva_kb_verify')) 
     // Add URL
     if ($_POST['nueva_kb_action'] == 'add_url') {
         $url = esc_url_raw($_POST['kb_url']);
-        // Placeholder text extraction
-        $content = "Content scraped from $url (Placeholder - Real scraping requires external libs)";
-        $wpdb->insert($table_name, [
-            'type' => 'url',
-            'source_ref' => $url,
-            'content' => $content,
-            'created_at' => current_time('mysql')
-        ]);
-        echo '<div class="notice notice-success"><p>URL added to Knowledge Base.</p></div>';
+
+        // 1. Fetch URL
+        $response = wp_remote_get($url, array('timeout' => 30));
+
+        if (is_wp_error($response)) {
+            echo '<div class="notice notice-error"><p>Failed to fetch URL: ' . $response->get_error_message() . '</p></div>';
+        } else {
+            $html = wp_remote_retrieve_body($response);
+
+            // 2. Extract Text
+            if (!empty($html)) {
+                $dom = new DOMDocument();
+                libxml_use_internal_errors(true);
+                $dom->loadHTML($html);
+                libxml_clear_errors();
+
+                $xpath = new DOMXPath($dom);
+                // Remove scripts and styles
+                foreach ($xpath->query('//script|//style|//noscript') as $node) {
+                    $node->parentNode->removeChild($node);
+                }
+
+                $content = trim($dom->textContent);
+                // Clean extra whitespace
+                $content = preg_replace('/\s+/', ' ', $content);
+                // Limit size
+                $content = substr($content, 0, 5000);
+
+                $wpdb->insert($table_name, [
+                    'type' => 'url',
+                    'source_ref' => $url,
+                    'content' => $content,
+                    'created_at' => current_time('mysql')
+                ]);
+                echo '<div class="notice notice-success"><p>URL scraped and saved successfully.</p></div>';
+            } else {
+                echo '<div class="notice notice-warning"><p>URL returned empty content.</p></div>';
+            }
+        }
     }
 
     // Manual Entry
@@ -40,42 +70,69 @@ if (isset($_POST['nueva_kb_action']) && check_admin_referer('nueva_kb_verify')) 
         $paragraphs = $_POST['manual_paragraph'];
         if (is_array($headings)) {
             foreach ($headings as $index => $heading) {
-                $data[] = [
-                    'heading' => sanitize_text_field($heading),
-                    'content' => sanitize_textarea_field($paragraphs[$index])
-                ];
+                // Combine for simpler storage in vector-like simple search
+                $text = "Context: " . sanitize_text_field($heading) . "\n" . sanitize_textarea_field($paragraphs[$index]);
+
+                $wpdb->insert($table_name, [
+                    'type' => 'manual',
+                    'source_ref' => 'Manual - ' . substr($heading, 0, 20) . '...',
+                    'content' => $text,
+                    'created_at' => current_time('mysql')
+                ]);
             }
         }
-        $wpdb->insert($table_name, [
-            'type' => 'structured_manual',
-            'source_ref' => 'Manual Entry ' . date('Y-m-d H:i'),
-            'content' => json_encode($data), // Searchable content handling needed later
-            'created_at' => current_time('mysql')
-        ]);
-        echo '<div class="notice notice-success"><p>Manual entry added.</p></div>';
+        echo '<div class="notice notice-success"><p>Manual entries added.</p></div>';
     }
 
-    // Site Scan
+    // Complete Site Scan (Pages, Posts, Products)
     if ($_POST['nueva_kb_action'] == 'scan_site') {
-        $args = ['post_type' => ['post', 'page'], 'posts_per_page' => -1, 'post_status' => 'publish'];
+        // Get all public post types including custom ones (WooCommerce products are 'product')
+        $post_types = get_post_types(array('public' => true), 'names');
+        // Exclude attachment, revision, nav_menu_item
+        unset($post_types['attachment'], $post_types['revision'], $post_types['nav_menu_item']);
+
+        $args = [
+            'post_type' => array_values($post_types),
+            'posts_per_page' => -1,
+            'post_status' => 'publish'
+        ];
+
         $query = new WP_Query($args);
         $count = 0;
+
         if ($query->have_posts()) {
             while ($query->have_posts()) {
                 $query->the_post();
-                $content = strip_tags(get_the_content());
-                if (!empty($content)) {
-                    $wpdb->insert($table_name, [
-                        'type' => 'wp_post',
-                        'source_ref' => get_the_permalink(), // Save URL as ref
-                        'content' => $content,
-                        'created_at' => current_time('mysql')
-                    ]);
-                    $count++;
+
+                // Get Content
+                $raw_content = get_the_content();
+                $clean_text = strip_tags($raw_content);
+                $clean_text = preg_replace('/\s+/', ' ', $clean_text);
+
+                // For Products, maybe add Price/Title explicitly
+                if (get_post_type() == 'product') {
+                    global $product;
+                    $clean_text = "Product: " . get_the_title() . ". Price: " . $product->get_price() . ". Description: " . $clean_text;
+                }
+
+                if (!empty($clean_text)) {
+                    // Check duplicate source
+                    $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table_name WHERE source_ref = %s", get_the_permalink()));
+
+                    if (!$exists) {
+                        $wpdb->insert($table_name, [
+                            'type' => 'wp_' . get_post_type(),
+                            'source_ref' => get_the_permalink(),
+                            'content' => trim($clean_text),
+                            'created_at' => current_time('mysql')
+                        ]);
+                        $count++;
+                    }
                 }
             }
+            wp_reset_postdata();
         }
-        echo '<div class="notice notice-success"><p>Scanned ' . $count . ' posts/pages.</p></div>';
+        echo '<div class="notice notice-success"><p>Scan Complete. Added ' . $count . ' new items from ' . implode(', ', $post_types) . '.</p></div>';
     }
 }
 

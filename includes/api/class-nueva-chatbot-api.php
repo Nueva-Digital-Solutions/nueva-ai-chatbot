@@ -61,8 +61,9 @@ class Nueva_Chatbot_API
         $message = sanitize_text_field($_POST['message']);
         $session_id = isset($_POST['session_id']) ? sanitize_text_field($_POST['session_id']) : '';
 
-        // Save User Message
+        // Capture Leads
         if ($session_id) {
+            $this->capture_lead($session_id, $message);
             $this->save_message($session_id, 'user', $message);
         }
 
@@ -84,6 +85,7 @@ class Nueva_Chatbot_API
         $session_id = isset($params['session_id']) ? sanitize_text_field($params['session_id']) : '';
 
         if ($session_id) {
+            $this->capture_lead($session_id, $message);
             $this->save_message($session_id, 'user', $message);
         }
 
@@ -108,10 +110,23 @@ class Nueva_Chatbot_API
         $tone = isset($options['behavior']['tone']) ? $options['behavior']['tone'] : 'professional';
 
         // 1. Context Retrieval (KB)
-        $context = $this->get_kb_context($user_message);
+        $kb_context = $this->get_kb_context($user_message);
 
-        // 2. Construct Prompt with Persona
-        $system_prompt = "You are $agent_name. Your tone is $tone. Use the following context to answer the user's question. If the answer is not in the context, use your general knowledge but be polite. \n\nContext:\n" . $context;
+        // 2. Dynamic Context (User Data / WooCommerce)
+        $user_context = $this->get_dynamic_context();
+
+        $full_context = $kb_context . "\n" . $user_context;
+
+        // 3. Construct Prompt with Persona & Strictness
+        // STRICT mode: "do not use outside knowledge"
+        $system_prompt = "You are $agent_name. Your tone is $tone. 
+You are an AI support agent for this specific website. 
+STRICT INSTRUCTION: Answer the user's question using ONLY the context provided below. 
+If the answer is not in the context, politely say 'I cannot find that information in my knowledge base' or offer to connect them with human support. 
+Do NOT make up information or use general knowledge outside of what is provided.
+
+Context:
+$full_context";
 
         $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->api_key}";
 
@@ -144,9 +159,7 @@ class Nueva_Chatbot_API
         $data = json_decode($body, true);
 
         if ($code !== 200) {
-            // Log error
             error_log("Gemini API Error: " . print_r($data, true));
-            // DEBUG: Return specific error to user
             $error_msg = isset($data['error']['message']) ? $data['error']['message'] : 'Unknown Error';
             return "API Error ($code): " . $error_msg;
         }
@@ -156,6 +169,96 @@ class Nueva_Chatbot_API
         }
 
         return "I didn't understand that. Could you rephrase?";
+    }
+
+    private function capture_lead($session_id, $message)
+    {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'bua_leads';
+
+        // Simple Regex for Email
+        preg_match('/[a-z0-9_\-\+\.]+@[a-z0-9\-]+\.([a-z]{2,4})(?:\.[a-z]{2})?/i', $message, $email_matches);
+        // Simple Regex for Phone (10+ digits)
+        preg_match('/\b\d{10,15}\b/', $message, $phone_matches);
+
+        $data = [];
+        if (!empty($email_matches[0])) {
+            $data['email'] = $email_matches[0];
+        }
+        if (!empty($phone_matches[0])) {
+            $data['phone'] = $phone_matches[0];
+        }
+
+        if (!empty($data)) {
+            // Check if session already has this lead data
+            $existing = $wpdb->get_row($wpdb->prepare("SELECT user_data FROM $table_name WHERE chat_session_id = %s", $session_id));
+
+            if ($existing) {
+                // Merge data
+                $existing_data = json_decode($existing->user_data, true);
+                if (!is_array($existing_data))
+                    $existing_data = [];
+                $new_data = array_merge($existing_data, $data);
+
+                $wpdb->update(
+                    $table_name,
+                    array('user_data' => json_encode($new_data)),
+                    array('chat_session_id' => $session_id)
+                );
+            } else {
+                // Insert new
+                $wpdb->insert(
+                    $table_name,
+                    array(
+                        'chat_session_id' => $session_id,
+                        'user_data' => json_encode($data),
+                        'collected_at' => current_time('mysql'),
+                        'is_synced' => 0
+                    )
+                );
+            }
+        }
+    }
+
+    private function get_dynamic_context()
+    {
+        $context = "";
+
+        // 1. Current User Info
+        if (is_user_logged_in()) {
+            $user = wp_get_current_user();
+            $context .= "Current User Name: " . $user->display_name . "\n";
+            $context .= "Current User Email: " . $user->user_email . "\n";
+
+            // 2. WooCommerce Orders (if active)
+            if (class_exists('WooCommerce')) {
+                // Get last 3 orders
+                $orders = wc_get_orders(array(
+                    'customer' => $user->ID,
+                    'limit' => 3,
+                    'orderby' => 'date',
+                    'order' => 'DESC',
+                    'return' => 'objects',
+                ));
+
+                if ($orders) {
+                    $context .= "User's Recent Orders:\n";
+                    foreach ($orders as $order) {
+                        $context .= "- Order #" . $order->get_id() . " (" . $order->get_status() . "): " . wc_price($order->get_total()) . " - Date: " . $order->get_date_created()->format('Y-m-d') . "\n";
+                        // Items
+                        foreach ($order->get_items() as $item_id => $item) {
+                            $context .= "  * " . $item->get_name() . " x " . $item->get_quantity() . "\n";
+                        }
+                    }
+                } else {
+                    $context .= "User has no recent orders.\n";
+                }
+            }
+        } else {
+            $context .= "User is not logged in (Guest).\n";
+        }
+
+        return $context;
     }
 
     private function get_kb_context($query)
@@ -242,6 +345,13 @@ class Nueva_Chatbot_API
             $chat_content .= "<li><strong>[$time] $sender:</strong> $msg</li>";
         }
         $chat_content .= "</ul>";
+
+        // Collect Leads for this session to highlight
+        $leads_table = $wpdb->prefix . 'bua_leads';
+        $lead = $wpdb->get_row($wpdb->prepare("SELECT user_data FROM $leads_table WHERE chat_session_id = %s", $session_id));
+        if ($lead) {
+            $chat_content .= "<hr><p><strong>LEAD CAPTURED:</strong> " . esc_html($lead->user_data) . "</p><hr>";
+        }
 
         $to = get_option('admin_email');
         $site_name = get_bloginfo('name');
