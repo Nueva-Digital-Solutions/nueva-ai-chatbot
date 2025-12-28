@@ -5,10 +5,11 @@ class Nueva_Chatbot_Updater
 
     private $slug;
     private $plugin_data;
-    private $username;
-    private $repo;
+    private $usernameParam;
+    private $repoParam;
     private $plugin_file;
     private $github_auth;
+    private $plugin_slug;
 
     public function __construct($plugin_file, $github_username, $github_repo, $access_token = '')
     {
