@@ -129,6 +129,9 @@ class Nueva_Chatbot_Admin
         // ... existing hooks ...
         add_action('wp_ajax_nueva_check_notifications', array($this, 'ajax_check_notifications'));
         add_action('wp_ajax_nueva_dismiss_notification', array($this, 'ajax_dismiss_notification'));
+
+        // CSV Export
+        add_action('admin_post_nueva_export_leads', array($this, 'export_leads_csv'));
     }
 
     public function ajax_check_notifications()
@@ -164,6 +167,41 @@ class Nueva_Chatbot_Admin
         wp_send_json_success();
     }
 
+    public function export_leads_csv()
+    {
+        if (!current_user_can('manage_options')) {
+            wp_die('Permission Denied');
+        }
+
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="leads-export-' . date('Y-m-d') . '.csv"');
+
+        $output = fopen('php://output', 'w');
+        fputcsv($output, array('ID', 'Date', 'Session ID', 'Name', 'Email', 'User Data', 'Synced'));
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'bua_leads';
+        $leads = $wpdb->get_results("SELECT * FROM $table_name", ARRAY_A);
+
+        foreach ($leads as $lead) {
+            $data = json_decode($lead['user_data'], true);
+            $name = $data['name'] ?? '';
+            $email = $data['email'] ?? '';
+
+            fputcsv($output, array(
+                $lead['id'],
+                $lead['collected_at'],
+                $lead['chat_session_id'],
+                $name,
+                $email,
+                $lead['user_data'],
+                $lead['is_synced'] ? 'Yes' : 'No'
+            ));
+        }
+        fclose($output);
+        exit;
+    }
+
     private function save_settings()
     {
         // Update Options
@@ -190,6 +228,8 @@ class Nueva_Chatbot_Admin
                 'tone' => sanitize_text_field($_POST['nueva_tone']),
                 'agent_instructions' => sanitize_textarea_field($_POST['nueva_agent_instructions']),
                 'lead_mode' => sanitize_text_field($_POST['nueva_lead_mode']),
+                'gate_title' => sanitize_text_field($_POST['nueva_gate_title']),
+                'gate_btn' => sanitize_text_field($_POST['nueva_gate_btn']),
                 'lead_skip_logged_in' => isset($_POST['nueva_lead_skip_logged_in']) ? (bool) $_POST['nueva_lead_skip_logged_in'] : false,
                 'allow_visits' => sanitize_text_field($_POST['nueva_allow_visits']),
                 'allow_links' => sanitize_text_field($_POST['nueva_allow_links']),

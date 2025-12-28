@@ -177,8 +177,29 @@ $visibility = $options['visibility'];
                             </option>
                             <option value="conversational" <?php selected(isset($behavior['lead_mode']) ? $behavior['lead_mode'] : '', 'conversational'); ?>>Conversational (Ask Name -> Email ->
                                 Phone)</option>
+                            <option value="gate" <?php selected(isset($behavior['lead_mode']) ? $behavior['lead_mode'] : '', 'gate'); ?>>Before Chat (Lead Gate Form)</option>
                         </select>
                         <p class="description">How should the AI collect user details?</p>
+                        <div id="nueva_gate_options"
+                            style="margin-top:10px; padding:10px; background:#f0f0f1; border:1px solid #ddd; <?php echo (isset($behavior['lead_mode']) && $behavior['lead_mode'] === 'gate') ? '' : 'display:none;'; ?>">
+                            <label>Gate Title: <input type="text" name="nueva_gate_title"
+                                    value="<?php echo isset($behavior['gate_title']) ? esc_attr($behavior['gate_title']) : 'Welcome! Please introduce yourself.'; ?>"
+                                    class="regular-text"></label><br>
+                            <label>Gate Button: <input type="text" name="nueva_gate_btn"
+                                    value="<?php echo isset($behavior['gate_btn']) ? esc_attr($behavior['gate_btn']) : 'Start Chat'; ?>"
+                                    class="regular-text"></label>
+                        </div>
+                        <script>
+                            jQuery(document).ready(function ($) {
+                                $('select[name="nueva_lead_mode"]').change(function () {
+                                    if ($(this).val() === 'gate') {
+                                        $('#nueva_gate_options').show();
+                                    } else {
+                                        $('#nueva_gate_options').hide();
+                                    }
+                                });
+                            });
+                        </script>
                     </td>
                 </tr>
                 <tr>
@@ -217,10 +238,12 @@ $visibility = $options['visibility'];
                     <th scope="row">Guest Order Status</th>
                     <td>
                         <select name="nueva_guest_orders">
-                            <option value="yes" <?php selected(isset($behavior['guest_orders']) ? $behavior['guest_orders'] : 'yes', 'yes'); ?>>✅ Enabled (Allow Order ID + Email lookup)</option>
+                            <option value="yes" <?php selected(isset($behavior['guest_orders']) ? $behavior['guest_orders'] : 'yes', 'yes'); ?>>✅ Enabled (Allow Order ID + Email lookup)
+                            </option>
                             <option value="no" <?php selected(isset($behavior['guest_orders']) ? $behavior['guest_orders'] : '', 'no'); ?>>❌ Disabled</option>
                         </select>
-                        <p class="description">Allows guest users to check order status by providing Order ID and Email in chat.</p>
+                        <p class="description">Allows guest users to check order status by providing Order ID and Email
+                            in chat.</p>
                     </td>
                 </tr>
                 <tr>
@@ -360,7 +383,7 @@ $visibility = $options['visibility'];
             file_frame.on('select', function () {
                 var attachment = file_frame.state().get('selection').first().toJSON();
                 $('#nueva_profile_image').val(attachment.url);
-   });
+            });
             file_frame.open();
         });
     });

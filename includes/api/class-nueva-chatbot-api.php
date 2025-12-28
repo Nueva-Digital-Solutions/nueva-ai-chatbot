@@ -182,6 +182,15 @@ class Nueva_Chatbot_API
             $system_prompt .= "IF User Status is GUEST: Ask for NAME, then EMAIL, then PHONE one by one before answering complex queries.\n";
         }
 
+        $system_prompt .= "
+        [FEATURES]
+        - SUGGESTIONS: At the end of your response, ALWAYS provide 2-3 short follow-up questions users might ask next.
+          Format: [SUGGESTIONS] [\"Suggestion 1\", \"Suggestion 2\"]
+        
+        - GUEST ORDERS: You can look up orders if provided an Order ID (digits) AND (Email OR Phone Number).
+          If user provides ID + Phone, say 'Checking order #ID with phone...'
+        ";
+
         // 6. KB / Context Rules
         $system_prompt .= "\n[RULE: CONTEXT & PRIVACY]\nDo NOT mention 'Knowledge Base' or 'Context'. Answer naturally.\n";
 
@@ -363,41 +372,53 @@ class Nueva_Chatbot_API
                 // Scan history for email + order ID
                 global $wpdb;
                 $table_name = $wpdb->prefix . 'bua_chat_history';
-                // Fetch last 10 messages to ensure we catch the inputs
                 $history = $wpdb->get_results($wpdb->prepare("SELECT message FROM $table_name ORDER BY timestamp DESC LIMIT 10"));
 
                 $found_email = '';
                 $found_order_id = '';
+                $found_phone = '';
+                $messages_text = '';
 
                 foreach ($history as $row) {
-                    $msg = $row->message;
-                    // Regex for Email
-                    if (empty($found_email) && preg_match('/[a-z0-9_\-\+\.]+@[a-z0-9\-]+\.([a-z]{2,4})(?:\.[a-z]{2})?/i', $msg, $matches)) {
-                        $found_email = $matches[0];
-                    }
-                    // Regex for Order ID (simple digits, maybe preceded by #)
-                    if (empty($found_order_id) && preg_match('/(?:^|\s|#)(\d{4,8})(?:\s|$)/', $msg, $matches)) {
-                        $found_order_id = $matches[1];
-                    }
+                    $messages_text .= $row->message . "\n";
                 }
 
-                if (!empty($found_email) && !empty($found_order_id)) {
+                preg_match('/[a-z0-9_\-\+\.]+@[a-z0-9\-]+\.([a-z]{2,4})(?:\.[a-z]{2})?/i', $messages_text, $email_matches);
+                if (!empty($email_matches[0]))
+                    $found_email = $email_matches[0];
+
+                preg_match('/(?:order\s*#?|#)\s*(\d{4,8})\b/i', $messages_text, $order_matches);
+                if (!empty($order_matches[1]))
+                    $found_order_id = $order_matches[1];
+
+                preg_match('/\b\d{7,15}\b/', str_replace(['-', ' ', '(', ')'], '', $messages_text), $phone_matches);
+                if (!empty($phone_matches[0]))
+                    $found_phone = $phone_matches[0];
+
+                if (!empty($found_order_id) && (!empty($found_email) || !empty($found_phone))) {
                     // Query WooCommerce
-                    $orders = wc_get_orders(array(
-                        'email' => $found_email,
-                        'post__in' => array($found_order_id),
-                        'return' => 'objects'
-                    ));
+                    $args = ['post__in' => [$found_order_id]];
+                    $orders = wc_get_orders($args);
 
                     if (!empty($orders)) {
                         $order = $orders[0];
-                        $context .= "[SYSTEM] Verified Guest Order Found:\n";
-                        $context .= "- Order #{$found_order_id} linked to {$found_email}\n";
-                        $context .= "- Status: " . $order->get_status() . "\n";
-                        $context .= "- Total: " . wc_price($order->get_total()) . "\n";
-                        $context .= "- Date: " . $order->get_date_created()->format('Y-m-d') . "\n";
-                    } else {
-                        // $context .= "[SYSTEM] Guest Order Lookup Failed: Order #{$found_order_id} not found for email {$found_email}.\n";
+                        // Verify
+                        $o_email = $order->get_billing_email();
+                        $o_phone = str_replace(['-', ' ', '(', ')'], '', $order->get_billing_phone());
+
+                        $match = false;
+                        if ($found_email && strcasecmp($found_email, $o_email) === 0)
+                            $match = true;
+                        if ($found_phone && strpos($o_phone, $found_phone) !== false)
+                            $match = true;
+
+                        if ($match) {
+                            $context .= "[SYSTEM] Verified Guest Order Found:\n";
+                            $context .= "- Order #{$found_order_id}\n";
+                            $context .= "- Status: " . $order->get_status() . "\n";
+                            $context .= "- Total: " . wc_price($order->get_total()) . "\n";
+                            $context .= "- Date: " . $order->get_date_created()->format('Y-m-d') . "\n";
+                        }
                     }
                 }
             }
