@@ -105,12 +105,19 @@ class Nueva_Chatbot_API
         }
 
         // Get Options
+        // Get Options
         $options = get_option('nueva_chat_options');
         $agent_name = isset($options['general']['agent_name']) ? $options['general']['agent_name'] : 'Nueva Agent';
         $tone = isset($options['behavior']['tone']) ? $options['behavior']['tone'] : 'professional';
-        $instructions = isset($options['behavior']['agent_instructions']) ? $options['behavior']['agent_instructions'] : '';
+        $extra_instructions = isset($options['behavior']['agent_instructions']) ? $options['behavior']['agent_instructions'] : '';
         $enable_handoff = isset($options['behavior']['enable_handoff']) ? $options['behavior']['enable_handoff'] : false;
         $lead_fields = isset($options['behavior']['lead_fields']) ? $options['behavior']['lead_fields'] : 'email or phone number';
+
+        // Settings / Flags
+        $lead_mode = isset($options['behavior']['lead_mode']) ? $options['behavior']['lead_mode'] : 'disabled';
+        $skip_logged_in = isset($options['behavior']['lead_skip_logged_in']) ? $options['behavior']['lead_skip_logged_in'] : false;
+        $allow_visits = isset($options['behavior']['allow_visits']) ? $options['behavior']['allow_visits'] : 'no';
+        $kb_strictness = isset($options['behavior']['kb_strictness']) ? $options['behavior']['kb_strictness'] : 'balanced';
 
         // --- HANDOFF LOGIC START ---
         if ($enable_handoff && $this->check_handoff_request($user_message)) {
@@ -139,18 +146,43 @@ class Nueva_Chatbot_API
 
         $full_context = $biz_context . "\n" . $kb_context . "\n" . $user_context . "\n" . $history_context;
 
-        // 3. Construct Prompt with Persona & Strictness
-        $system_prompt = "You are $agent_name. Your tone is $tone. 
-You are an AI support agent for this specific website. 
-STRICT INSTRUCTION: Answer the user's question using ONLY the context provided below.
-IMPORTANT: Never mention the words 'context', 'knowledge base', 'internal data', or 'provided text'. Answer naturally as if you simply know the information.
-If the answer is not in the context, politely deny knowing it (e.g., 'I don't have that information directly...') or offer to connect with human support.
-Do NOT make up information.
+        // --- DYNAMIC PROMPT BUILDER ---
 
-CUSTOM INSTRUCTIONS: $instructions
+        // 1. Core Persona
+        $system_prompt = "You are $agent_name. Your tone is $tone. You are an AI support agent for this specific website.\n";
 
-Context:
-$full_context";
+        // 2. Strictness
+        if ($kb_strictness === 'strict') {
+            $system_prompt .= "STRICT INSTRUCTION: Answer using ONLY the context provided below. If the answer is not in the context, say 'I don't have that information'. Do NOT use general knowledge.\n";
+        } else {
+            $system_prompt .= "INSTRUCTION: Prioritize the proper Context below. If the answer is missing, you may use general helpful knowledge, but be cautious not to hallucinate business policies.\n";
+        }
+
+        // 3. Visit Policy
+        if ($allow_visits === 'yes') {
+            $system_prompt .= "[POLICY] Physical Visits: ALLOWED. You may invite users to visit the store/office if relevant.\n";
+        } else {
+            $system_prompt .= "[POLICY] Physical Visits: NOT ALLOWED. We are Online/Remote only. Do not suggest visiting a physical location.\n";
+        }
+
+        // 4. Lead Gen Logic
+        if ($lead_mode === 'conversational') {
+            $system_prompt .= "\n[RULE: LEAD GENERATION]\n";
+            if ($skip_logged_in) {
+                $system_prompt .= "IF User Status is LOGGED IN: Do NOT ask for contact info. Proceed to help.\n";
+            }
+            $system_prompt .= "IF User Status is GUEST: Ask for NAME, then EMAIL, then PHONE one by one before answering complex queries.\n";
+        }
+
+        // 5. KB / Context Rules
+        $system_prompt .= "\n[RULE: CONTEXT & PRIVACY]\nDo NOT mention 'Knowledge Base' or 'Context'. Answer naturally.\n";
+
+        // 6. Extra / Custom
+        if (!empty($extra_instructions)) {
+            $system_prompt .= "\nCUSTOM INSTRUCTIONS: $extra_instructions\n";
+        }
+
+        $system_prompt .= "\nContext:\n$full_context";
 
         $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->api_key}";
 

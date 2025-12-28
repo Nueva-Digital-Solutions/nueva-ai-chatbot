@@ -170,15 +170,51 @@ $visibility = $options['visibility'];
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row">Custom Agent Instructions</th>
+                    <th scope="row">Lead Generation Mode</th>
                     <td>
-                        <textarea name="nueva_agent_instructions" class="large-text" rows="14"
-                            placeholder="Enter instructions..."><?php
-                            $default_instructions = "You are a helpful AI assistant.\n\n[RULE: LEAD GENERATION]\nIF User Status is GUEST:\n1. First, politely ask for their NAME.\n2. Once they provide it, ask for their EMAIL.\n3. Finally, ask for their PHONE NUMBER.\nDo this ONE BY ONE before answering complex queries.\n\nIF User Status is LOGGED IN:\nDo not ask for contact details and Proceed to answer their questions immediately.\n\n[RULE: KNOWLEDGE BASE]\nAlways prioritize the provided Context (Products, Policies, etc) over general knowledge.\nIf asked about products, use the 'Product: ...' details in context (Price, Stock) to answer accurately.\nIf the answer is NOT in the context, politely say you don't know or offer to connect with a human.\n\n[RULE: TONE]\nBe helpful, concise, and professional.";
-                            echo isset($behavior['agent_instructions']) && !empty($behavior['agent_instructions']) ? esc_textarea($behavior['agent_instructions']) : $default_instructions;
-                            ?></textarea>
-                        <p class="description">Specific instructions for the AI's behavior. You can edit the Lead
-                            Generation rules above.</p>
+                        <select name="nueva_lead_mode">
+                            <option value="disabled" <?php selected(isset($behavior['lead_mode']) ? $behavior['lead_mode'] : 'disabled', 'disabled'); ?>>Disabled (Chat Immediately)</option>
+                            <option value="conversational" <?php selected(isset($behavior['lead_mode']) ? $behavior['lead_mode'] : '', 'conversational'); ?>>Conversational (Ask Name -> Email -> Phone)</option>
+                        </select>
+                        <p class="description">How should the AI collect user details?</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Logged-in Users</th>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="nueva_lead_skip_logged_in" value="1" <?php checked(isset($behavior['lead_skip_logged_in']) ? $behavior['lead_skip_logged_in'] : false); ?>>
+                            Skip lead collection if user is already Logged In
+                        </label>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Office/Store Visits</th>
+                    <td>
+                        <select name="nueva_allow_visits">
+                            <option value="yes" <?php selected(isset($behavior['allow_visits']) ? $behavior['allow_visits'] : 'no', 'yes'); ?>>✅ Allowed (We accept physical visits)</option>
+                            <option value="no" <?php selected(isset($behavior['allow_visits']) ? $behavior['allow_visits'] : 'no', 'no'); ?>>❌ Not Allowed (Online / Remote Only)</option>
+                        </select>
+                        <p class="description">Does your business accept walk-ins or physical visits? The AI will answer accordingly.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">AI Strictness</th>
+                    <td>
+                        <select name="nueva_kb_strictness">
+                            <option value="balanced" <?php selected(isset($behavior['kb_strictness']) ? $behavior['kb_strictness'] : 'balanced', 'balanced'); ?>>Balanced (KB + General Knowledge)</option>
+                            <option value="strict" <?php selected(isset($behavior['kb_strictness']) ? $behavior['kb_strictness'] : '', 'strict'); ?>>Strict (Knowledge Base ONLY)</option>
+                        </select>
+                        <p class="description">Strict mode reduces hallucinations but may say "I don't know" more often.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Additional Instructions</th>
+                    <td>
+                        <textarea name="nueva_agent_instructions" id="nueva_agent_instructions" class="large-text" rows="5" placeholder="e.g. Always mention our 24/7 support. Be very polite."><?php 
+                            echo isset($behavior['agent_instructions']) ? esc_textarea($behavior['agent_instructions']) : ''; 
+                        ?></textarea>
+                        <p class="description">Any extra rules (Tone, specific phrases to avoid) to append to the system prompt.</p>
                     </td>
                 </tr>
                 <tr>
