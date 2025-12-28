@@ -43,8 +43,7 @@ $visibility = $options['visibility'];
                         <input type="email" name="nueva_notification_email"
                             value="<?php echo isset($general['notification_email']) ? esc_attr($general['notification_email']) : get_option('admin_email'); ?>"
                             class="regular-text" />
-                        <p class="description">Email to receive chat transcripts and leads. (A copy is always sent to
-                            education.anurodh@gmail.com)</p>
+                        <p class="description">Email to receive chat transcripts and leads.</p>
                     </td>
                 </tr>
                 <tr>
@@ -74,9 +73,9 @@ $visibility = $options['visibility'];
                         <p class="description">Select a preset or choose "Custom" to enter a specific Model ID manually.
                         </p>
                         <script>
-                            jQuery(document).ready(function ($) {
-                                $('#nueva_model_select').change(function () {
-                                    if ($(this).val() === 'custom') {
+                            jQuery(document).ready(function  ($)  {
+                                $('#nueva_model_select').change(functio n  () {
+                                     if ($(this).val() === 'custom') {
                                         $('#nueva_model_custom').show();
                                     } else {
                                         $('#nueva_model_custom').hide();

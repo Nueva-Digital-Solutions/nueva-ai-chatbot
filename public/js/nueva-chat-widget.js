@@ -5,12 +5,20 @@ jQuery(document).ready(function ($) {
     var $body = $('#nueva-chat-body');
     var $input = $('#nueva-chat-input');
 
+    // Session ID Management
+    var session_id = localStorage.getItem('nueva_chat_session_id');
+    if (!session_id) {
+        session_id = 'sess_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+        localStorage.setItem('nueva_chat_session_id', session_id);
+    }
+
     // Toggle Chat
     $('.nueva-chat-button, .close-chat').click(function () {
         isOpen = !isOpen;
         if (isOpen) {
             $window.fadeIn('fast');
             $widget.removeClass('closed').addClass('open');
+            scrollToBottom();
         } else {
             $window.fadeOut('fast');
             $widget.removeClass('open').addClass('closed');
@@ -42,6 +50,7 @@ jQuery(document).ready(function ($) {
         $.post(nueva_chat_vars.ajax_url, {
             action: 'nueva_chat_message',
             message: msg,
+            session_id: session_id,
             nonce: nueva_chat_vars.nonce
         }, function (response) {
             $('.typing').remove();
@@ -61,7 +70,7 @@ jQuery(document).ready(function ($) {
     }
 
     function scrollToBottom() {
-        $body.scrollTop($body[0].scrollHeight);
+        $body.animate({ scrollTop: $body.prop("scrollHeight") }, 500);
     }
 
     function escapeHtml(text) {
@@ -74,6 +83,24 @@ jQuery(document).ready(function ($) {
         };
         return text.replace(/[&<>"']/g, function (m) { return map[m]; });
     }
+
+    // End Chat Handler
+    $('#nueva-chat-end').click(function () {
+        if (confirm("End current chat and email transcript?")) {
+            $.post(nueva_chat_vars.ajax_url, {
+                action: 'nueva_end_chat',
+                session_id: session_id
+            }, function (response) {
+                $body.append('<div class="message bot">Chat ended. Transcript sent!</div>');
+                scrollToBottom();
+                // Clear session
+                localStorage.removeItem('nueva_chat_session_id');
+                // Create new session for next time? Or just leave it.
+                session_id = 'sess_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+                localStorage.setItem('nueva_chat_session_id', session_id);
+            });
+        }
+    });
 
     // --- SECURITY: Branding Integrity Check ---
     setTimeout(function () { // Wait for initial render
