@@ -40,14 +40,35 @@ $visibility = $options['visibility'];
                 <tr>
                     <th scope="row">AI Model</th>
                     <td>
-                        <select name="nueva_model">
+                        <select name="nueva_model" id="nueva_model_select">
+                            <option value="gemini-2.0-flash" <?php selected($general['model'], 'gemini-2.0-flash'); ?>>
+                                Gemini 2.0 Flash (Latest)</option>
                             <option value="gemini-1.5-flash" <?php selected($general['model'], 'gemini-1.5-flash'); ?>>
-                                Gemini 1.5 Flash (Fastest)</option>
-                            <option value="gemini-1.5-pro-001" <?php selected($general['model'], 'gemini-1.5-pro-001'); ?>>
+                                Gemini 1.5 Flash</option>
+                            <option value="gemini-1.5-pro" <?php selected($general['model'], 'gemini-1.5-pro'); ?>>
                                 Gemini 1.5 Pro (Best Quality)</option>
-                            <option value="gemini-1.0-pro" <?php selected($general['model'], 'gemini-1.0-pro'); ?>>
-                                Gemini 1.0 Pro (Legacy)</option>
+                            <option value="gemini-1.5-flash-8b" <?php selected($general['model'], 'gemini-1.5-flash-8b'); ?>>
+                                Gemini 1.5 Flash-8B (Efficient)</option>
+                            <option value="custom" <?php selected($general['model'], 'custom'); ?>>
+                                Custom / Other...</option>
                         </select>
+                        <br>
+                        <input type="text" name="nueva_model_custom" id="nueva_model_custom" 
+                               value="<?php echo isset($general['model_custom']) ? esc_attr($general['model_custom']) : ''; ?>" 
+                               class="regular-text" placeholder="e.g., gemini-2.0-pro-exp" 
+                               style="margin-top: 5px; display: <?php echo ($general['model'] === 'custom') ? 'block' : 'none'; ?>;" />
+                        <p class="description">Select a preset or choose "Custom" to enter a specific Model ID manually.</p>
+                        <script>
+                            jQuery(document).ready(function($){
+                                $('#nueva_model_select').change(function(){
+                                    if($(this).val() === 'custom') {
+                                        $('#nueva_model_custom').show();
+                                    } else {
+                                        $('#nueva_model_custom').hide();
+                                    }
+                                });
+                            });
+                        </script>
                     </td>
                 </tr>
             </table>
