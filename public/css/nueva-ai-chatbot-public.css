@@ -301,11 +301,17 @@
 
 /* Typing Indicator */
 .message.typing {
-    background: transparent;
-    padding: 10px;
+    background: #ffffff;
+    /* White background as requested */
+    padding: 15px 20px;
     display: flex;
     align-items: center;
     gap: 4px;
+    width: fit-content;
+    border-bottom-left-radius: 4px;
+    /* Match bot bubble */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    /* Floating effect */
 }
 
 .typing-indicator span {

@@ -48,7 +48,7 @@ jQuery(document).ready(function ($) {
 
         // Visual Typing Dots
         var loadingId = 'typing-' + Date.now();
-        $body.append('<div class="nueva-chat-message bot typing" id="' + loadingId + '"><div class="typing-indicator"><span></span><span></span><span></span></div></div>');
+        $body.append('<div class="message bot typing" id="' + loadingId + '"><div class="typing-indicator"><span></span><span></span><span></span></div></div>');
         scrollToBottom();
 
         $.post(nueva_chat_vars.ajax_url, {
@@ -113,7 +113,14 @@ jQuery(document).ready(function ($) {
             .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:inherit; text-decoration:underline;">$1</a>')
             .replace(/\n/g, '<br>');
 
-        const msgHtml = `<div class="nueva-chat-message ${sender}" style="background-color: ${sender === 'user' ? nueva_chat_vars.primary_col : '#f1f1f1'}; color: ${sender === 'user' ? '#fff' : '#000'};">
+        // Fix: Use 'message' class to match CSS. 
+        // Only apply inline styles for USER (primary color). Let CSS handle BOT (white).
+        let inlineStyle = '';
+        if (sender === 'user') {
+            inlineStyle = `style="background-color: ${nueva_chat_vars.primary_col}; color: #fff;"`;
+        }
+
+        const msgHtml = `<div class="message ${sender}" ${inlineStyle}>
             ${formattedText}
         </div>`;
 
