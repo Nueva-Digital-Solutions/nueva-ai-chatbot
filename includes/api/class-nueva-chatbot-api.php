@@ -96,7 +96,9 @@ class Nueva_Chatbot_API
         if ($code !== 200) {
             // Log error
             error_log("Gemini API Error: " . print_r($data, true));
-            return "I encountered an error processing your request.";
+            // DEBUG: Return specific error to user
+            $error_msg = isset($data['error']['message']) ? $data['error']['message'] : 'Unknown Error';
+            return "API Error ($code): " . $error_msg;
         }
 
         if (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
