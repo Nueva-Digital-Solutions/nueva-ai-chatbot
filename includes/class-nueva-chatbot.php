@@ -16,7 +16,7 @@ class Nueva_Chatbot
         if (defined('NUEVA_AI_CHATBOT_VERSION')) {
             $this->version = NUEVA_AI_CHATBOT_VERSION;
         } else {
-            $this->version = '1.3.0';
+            $this->version = '1.4.0';
         }
         $this->plugin_name = 'nueva-ai-chatbot';
 
