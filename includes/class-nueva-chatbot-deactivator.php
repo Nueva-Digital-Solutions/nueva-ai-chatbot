@@ -15,7 +15,7 @@ class Nueva_Chatbot_Deactivator
      */
     public static function deactivate()
     {
-        // Nothing to clean up for now.
-        // We do NOT drop tables on deactivation to preserve user data.
+        // Clear Telemetry Cron
+        wp_clear_scheduled_hook('nueva_weekly_telemetry');
     }
 }

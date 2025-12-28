@@ -2,12 +2,12 @@
 
 An advanced AI chatbot plugin for WordPress powered by Google Gemini. Developed by [Nueva Digital Solutions](https://nuevadigital.co.in).
 
-![Detailed Banner Placeholder](https://via.placeholder.com/1200x400?text=Nueva+AI+Chatbot)
+
 
 ## 🚀 Features
 
 - **Google Gemini Integration**: Utilizes the latest Gemini 2.5 Pro and Flash models for intelligent, context-aware responses.
-- **Multimodal capabilities**: AI can analyze uploaded Images and PDFs.
+- **Multimodal Capabilities**: AI can analyze uploaded Images and PDFs to answer questions.
 - **Dynamic Knowledge Base**:
     - **Site Scan**: Auto-ingest all your WordPress Posts and Pages.
     - **URL Scraping**: Add external links for context.
@@ -15,16 +15,22 @@ An advanced AI chatbot plugin for WordPress powered by Google Gemini. Developed 
 - **Lead Generation**: 
     - **Conversational**: Capture details naturally during chat.
     - **Leads Gate**: Force lead capture before starting a chat.
-    - **Export**: Download leads as CSV.
     - **Custom Fields**: Configure exact fields to collect (Name, City, Order #) with strict validation.
-- **Smart AI Actions**:
+    - **Export**: Download leads as CSV.
+- **Feedback & Analytics**:
+    - **User Ratings**: 5-point Emoji feedback system (Very Dissatisfied to Very Satisfied).
+    - **Dashboard**: Visual charts for Chat Activity and Customer Sentiment.
+    - **Insights**: Track Total Conversations, Leads, and Average Ratings.
+- **Smart Actions**:
     - **Suggestions**: Auto-suggested follow-up questions.
-    - **Order Lookup**: Guests can check order status via Email or Phone.
+    - **Smart End**: Auto-detects intents like "Bye" or "No thanks" to gracefully close the chat.
+    - **Inactivity**: Auto-ends session after 5 minutes of silence.
+    - **Order Lookup**: WooCommerce guests can check order status via Email or Phone.
+- **Visual Flow Builder**: Create static conversation trees for guided support.
 - **Customizable Appearance**:
     - Match your brand's Primary/Secondary colors.
     - Choose fonts (Roboto, Inter, Open Sans).
     - Custom Positioning (Left/Right) for Desktop and Mobile.
-- **Visual Flow Builder**: Create static conversation trees for guided support.
 - **Privacy & Control**: Admin dashboard to manage all chat logs and leads.
 
 ## 🛠 Installation
@@ -46,6 +52,13 @@ An advanced AI chatbot plugin for WordPress powered by Google Gemini. Developed 
 
 ## 📜 Changelog
 
+### 1.7.0
+*   **New**: Customer Feedback System (1-5 Stars, Emoji UI).
+*   **New**: Admin Analytics Dashboard (Visual Charts for Activity & Sentiment).
+*   **New**: Smart End-Chat (Auto-ends on Inactivity or "Bye" intents).
+*   **New**: Feedback Management Tab.
+*   **Database**: Added table for feedback tracking.
+
 ### 1.6.0
 * Added strict email/phone validation in AI logic.
 * Added support for file attachments (images/PDF) in chat.
@@ -59,6 +72,22 @@ An advanced AI chatbot plugin for WordPress powered by Google Gemini. Developed 
 *   **New**: Guest Order Lookup by Phone Number.
 *   **New**: "Load Template" for Flows.
 *   **Improved**: Lead Management (CSV Export, IP, Date).
+*   **Improved**: De-activated AI Auto-Flow Generator.
+
+### 1.4.0
+*   Fixed path issue in flow generator.
+
+### 1.3.0
+*   Added AI Auto-Generate Flows.
+*   Added Smart Actions (Link, Phone).
+*   Added Conditional Logic for Flows.
+
+### 1.2.0
+*   Added Guest Order Status (Email + ID).
+*   Added Link Sharing Controls.
+
+### 1.0.0
+*   Initial release.
 
 ## 🤝 Contributing
 

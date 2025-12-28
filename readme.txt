@@ -3,7 +3,7 @@ Contributors: nuevadigital
 Tags: ai, chatbot, gemini, google gemini, customer support, lead generation
 Requires at least: 5.8
 Tested up to: 6.4
-Stable tag: 1.6.0
+Stable tag: 1.7.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -16,12 +16,16 @@ Nueva AI Chatbot is a powerful conversational agent for WordPress, driven by Goo
 
 **Key Features:**
 
-*   **AI Integration**: Powered by Google Gemini 2.5 Flash/Pro & 3.0 Preview.
-*   **Knowledge Base**: Train the AI with your website content, external URLs, PDF documents, or manual structured data.
-*   **Custom Flows**: Build static decision-tree flows for guided conversations.
-*   **Lead Generation**: Capture user details and sync them to your admin dashboard (Google Sheets & Webhooks coming soon).
-*   **Deep Customization**: Customize colors, fonts, position, tone, and language to match your brand.
-*   **Branding Control**: Display your agent's name and profile picture. Includes "Powered by Nueva Digital" attribution.
+*   **AI Core**: Powered by Google Gemini 2.5 Flash/Pro & 3.0 Preview for human-like understanding.
+*   **Multimodal**: Users can upload Images and PDFs for the AI to analyze and discuss.
+*   **Knowledge Base**: Train the AI with your Website Content (Site Scan), External URLs, PDFs, or Manual Data.
+*   **Lead Generation**: Capture Name, Email, Phone, and Custom Fields (e.g. Order ID) with strict validation.
+*   **Smart Automation**: Auto-suggestions, Inactivity Auto-end, and "Smart End" detection (e.g. "Bye").
+*   **WooCommerce**: Guests can check Order Status using their Phone Number or Email.
+*   **Feedback System**: Built-in 5-star Emoji rating system to gather user sentiment.
+*   **Analytics Dashboard**: Visual charts for Chat Volume, Satisfaction Ratings, and Lead conversions.
+*   **Visual Flows**: Create static decision trees for guided support workflows.
+*   **Customization**: Match your brand's Colors, Fonts, Tone, and Position.
 
 == Installation ==
 
@@ -46,6 +50,13 @@ Yes, you can fully customize the primary and secondary colors, as well as the fo
 3.  **Frontend Widget**: The beautiful, responsive chat interface.
 
 == Changelog ==
+
+= 1.7.0 =
+*   **New**: Customer Feedback System (1-5 Stars, Emoji UI).
+*   **New**: Admin Analytics Dashboard (Visual Charts for Activity & Sentiment).
+*   **New**: Smart End-Chat (Auto-ends on Inactivity or "Bye" intents).
+*   **New**: Feedback Management Tab.
+*   **Database**: Added table for feedback tracking.
 
 = 1.6.0 =
 * Added strict email/phone validation in AI logic.
