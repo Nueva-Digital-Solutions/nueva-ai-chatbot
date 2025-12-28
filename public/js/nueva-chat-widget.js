@@ -16,7 +16,9 @@ jQuery(document).ready(function ($) {
     $('.nueva-chat-button, .close-chat').click(function () {
         isOpen = !isOpen;
         if (isOpen) {
-            $window.fadeIn('fast');
+            $window.css('display', 'flex').hide().fadeIn('fast', function () {
+                $(this).css('display', 'flex');
+            });
             $widget.removeClass('closed').addClass('open');
             scrollToBottom();
         } else {

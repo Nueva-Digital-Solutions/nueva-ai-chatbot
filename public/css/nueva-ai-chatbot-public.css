@@ -53,6 +53,10 @@
     animation: nuevaSlideUp 0.3s ease-out;
 }
 
+.nueva-chat-window.open {
+    display: flex !important;
+}
+
 @keyframes nuevaSlideUp {
     from {
         opacity: 0;
@@ -199,6 +203,8 @@
     flex-wrap: wrap;
     gap: 10px;
     align-items: center;
+    flex-shrink: 0;
+    /* Prevent footer from collapsing */
 }
 
 .nueva-chat-footer input {
