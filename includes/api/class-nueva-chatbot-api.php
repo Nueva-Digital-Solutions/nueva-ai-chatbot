@@ -102,11 +102,16 @@ class Nueva_Chatbot_API
             return "Error: API Key is missing. Please contact the administrator.";
         }
 
+        // Get Options for Persona
+        $options = get_option('nueva_chat_options');
+        $agent_name = isset($options['general']['agent_name']) ? $options['general']['agent_name'] : 'Nueva Agent';
+        $tone = isset($options['behavior']['tone']) ? $options['behavior']['tone'] : 'professional';
+
         // 1. Context Retrieval (KB)
         $context = $this->get_kb_context($user_message);
 
-        // 2. Construct Prompt
-        $system_prompt = "You are a helpful AI assistant for this website. Use the following context to answer the user's question. If the answer is not in the context, use your general knowledge but be polite. \n\nContext:\n" . $context;
+        // 2. Construct Prompt with Persona
+        $system_prompt = "You are $agent_name. Your tone is $tone. Use the following context to answer the user's question. If the answer is not in the context, use your general knowledge but be polite. \n\nContext:\n" . $context;
 
         $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->api_key}";
 
@@ -242,9 +247,17 @@ class Nueva_Chatbot_API
         $site_name = get_bloginfo('name');
         $subject = "[$site_name] Chat Transcript - Session $session_id";
 
+        // Simplified headers for better deliverability
+        // We let WordPress handle the 'From' address (usually wordpress@domain.com)
+        // to avoid SPF/DKIM rejections.
         $headers = array('Content-Type: text/html; charset=UTF-8');
-        $headers[] = 'From: ' . $site_name . ' <' . $to . '>';
 
-        return wp_mail($to, $subject, $chat_content, $headers);
+        $sent = wp_mail($to, $subject, $chat_content, $headers); // Return value is bool
+
+        if (!$sent) {
+            error_log("Nueva Chatbot: Failed to send transcript email for session $session_id to $to");
+        }
+
+        return $sent;
     }
 }
