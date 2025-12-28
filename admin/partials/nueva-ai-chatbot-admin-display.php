@@ -173,8 +173,10 @@ $visibility = $options['visibility'];
                     <th scope="row">Lead Generation Mode</th>
                     <td>
                         <select name="nueva_lead_mode">
-                            <option value="disabled" <?php selected(isset($behavior['lead_mode']) ? $behavior['lead_mode'] : 'disabled', 'disabled'); ?>>Disabled (Chat Immediately)</option>
-                            <option value="conversational" <?php selected(isset($behavior['lead_mode']) ? $behavior['lead_mode'] : '', 'conversational'); ?>>Conversational (Ask Name -> Email -> Phone)</option>
+                            <option value="disabled" <?php selected(isset($behavior['lead_mode']) ? $behavior['lead_mode'] : 'disabled', 'disabled'); ?>>Disabled (Chat Immediately)
+                            </option>
+                            <option value="conversational" <?php selected(isset($behavior['lead_mode']) ? $behavior['lead_mode'] : '', 'conversational'); ?>>Conversational (Ask Name -> Email ->
+                                Phone)</option>
                         </select>
                         <p class="description">How should the AI collect user details?</p>
                     </td>
@@ -192,29 +194,46 @@ $visibility = $options['visibility'];
                     <th scope="row">Office/Store Visits</th>
                     <td>
                         <select name="nueva_allow_visits">
-                            <option value="yes" <?php selected(isset($behavior['allow_visits']) ? $behavior['allow_visits'] : 'no', 'yes'); ?>>✅ Allowed (We accept physical visits)</option>
-                            <option value="no" <?php selected(isset($behavior['allow_visits']) ? $behavior['allow_visits'] : 'no', 'no'); ?>>❌ Not Allowed (Online / Remote Only)</option>
+                            <option value="yes" <?php selected(isset($behavior['allow_visits']) ? $behavior['allow_visits'] : 'no', 'yes'); ?>>✅ Allowed (We accept physical visits)
+                            </option>
+                            <option value="no" <?php selected(isset($behavior['allow_visits']) ? $behavior['allow_visits'] : 'no', 'no'); ?>>❌ Not Allowed (Online / Remote Only)
+                            </option>
                         </select>
-                        <p class="description">Does your business accept walk-ins or physical visits? The AI will answer accordingly.</p>
+                        <p class="description">Does your business accept walk-ins or physical visits? The AI will answer
+                            accordingly.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Link Sharing</th>
+                    <td>
+                        <select name="nueva_allow_links">
+                            <option value="yes" <?php selected(isset($behavior['allow_links']) ? $behavior['allow_links'] : 'yes', 'yes'); ?>>✅ Allowed (Share Content URLs)</option>
+                            <option value="no" <?php selected(isset($behavior['allow_links']) ? $behavior['allow_links'] : '', 'no'); ?>>❌ Disabled (Do NOT share URLs)</option>
+                        </select>
+                        <p class="description">Should the AI provide links to products or pages when found?</p>
                     </td>
                 </tr>
                 <tr>
                     <th scope="row">AI Strictness</th>
                     <td>
                         <select name="nueva_kb_strictness">
-                            <option value="balanced" <?php selected(isset($behavior['kb_strictness']) ? $behavior['kb_strictness'] : 'balanced', 'balanced'); ?>>Balanced (KB + General Knowledge)</option>
+                            <option value="balanced" <?php selected(isset($behavior['kb_strictness']) ? $behavior['kb_strictness'] : 'balanced', 'balanced'); ?>>Balanced (KB + General
+                                Knowledge)</option>
                             <option value="strict" <?php selected(isset($behavior['kb_strictness']) ? $behavior['kb_strictness'] : '', 'strict'); ?>>Strict (Knowledge Base ONLY)</option>
                         </select>
-                        <p class="description">Strict mode reduces hallucinations but may say "I don't know" more often.</p>
+                        <p class="description">Strict mode reduces hallucinations but may say "I don't know" more often.
+                        </p>
                     </td>
                 </tr>
                 <tr>
                     <th scope="row">Additional Instructions</th>
                     <td>
-                        <textarea name="nueva_agent_instructions" id="nueva_agent_instructions" class="large-text" rows="5" placeholder="e.g. Always mention our 24/7 support. Be very polite."><?php 
-                            echo isset($behavior['agent_instructions']) ? esc_textarea($behavior['agent_instructions']) : ''; 
-                        ?></textarea>
-                        <p class="description">Any extra rules (Tone, specific phrases to avoid) to append to the system prompt.</p>
+                        <textarea name="nueva_agent_instructions" id="nueva_agent_instructions" class="large-text"
+                            rows="5" placeholder="e.g. Always mention our 24/7 support. Be very polite."><?php
+                            echo isset($behavior['agent_instructions']) ? esc_textarea($behavior['agent_instructions']) : '';
+                            ?></textarea>
+                        <p class="description">Any extra rules (Tone, specific phrases to avoid) to append to the system
+                            prompt.</p>
                     </td>
                 </tr>
                 <tr>
@@ -331,7 +350,7 @@ $visibility = $options['visibility'];
             file_frame.on('select', function () {
                 var attachment = file_frame.state().get('selection').first().toJSON();
                 $('#nueva_profile_image').val(attachment.url);
-            });
+   });
             file_frame.open();
         });
     });

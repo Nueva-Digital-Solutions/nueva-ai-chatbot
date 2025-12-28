@@ -192,6 +192,7 @@ class Nueva_Chatbot_Admin
                 'lead_mode' => sanitize_text_field($_POST['nueva_lead_mode']),
                 'lead_skip_logged_in' => isset($_POST['nueva_lead_skip_logged_in']) ? (bool) $_POST['nueva_lead_skip_logged_in'] : false,
                 'allow_visits' => sanitize_text_field($_POST['nueva_allow_visits']),
+                'allow_links' => sanitize_text_field($_POST['nueva_allow_links']),
                 'kb_strictness' => sanitize_text_field($_POST['nueva_kb_strictness']),
                 'lead_fields' => sanitize_text_field($_POST['nueva_lead_fields']),
                 'initial_message' => sanitize_textarea_field($_POST['nueva_initial_message']),

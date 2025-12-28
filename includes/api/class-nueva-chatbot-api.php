@@ -117,6 +117,7 @@ class Nueva_Chatbot_API
         $lead_mode = isset($options['behavior']['lead_mode']) ? $options['behavior']['lead_mode'] : 'disabled';
         $skip_logged_in = isset($options['behavior']['lead_skip_logged_in']) ? $options['behavior']['lead_skip_logged_in'] : false;
         $allow_visits = isset($options['behavior']['allow_visits']) ? $options['behavior']['allow_visits'] : 'no';
+        $allow_links = isset($options['behavior']['allow_links']) ? $options['behavior']['allow_links'] : 'yes';
         $kb_strictness = isset($options['behavior']['kb_strictness']) ? $options['behavior']['kb_strictness'] : 'balanced';
 
         // --- HANDOFF LOGIC START ---
@@ -165,7 +166,14 @@ class Nueva_Chatbot_API
             $system_prompt .= "[POLICY] Physical Visits: NOT ALLOWED. We are Online/Remote only. Do not suggest visiting a physical location.\n";
         }
 
-        // 4. Lead Gen Logic
+        // 4. Link Sharing Policy
+        if ($allow_links === 'yes') {
+            $system_prompt .= "[POLICY] Links: ALLOWED. If a 'Source URL' is present in the context and relevant to the user's question, you MUST share it. Format it as a Markdown link.\n";
+        } else {
+            $system_prompt .= "[POLICY] Links: NOT ALLOWED. Do NOT output URLs even if they are in the context.\n";
+        }
+
+        // 5. Lead Gen Logic
         if ($lead_mode === 'conversational') {
             $system_prompt .= "\n[RULE: LEAD GENERATION]\n";
             if ($skip_logged_in) {
@@ -174,10 +182,10 @@ class Nueva_Chatbot_API
             $system_prompt .= "IF User Status is GUEST: Ask for NAME, then EMAIL, then PHONE one by one before answering complex queries.\n";
         }
 
-        // 5. KB / Context Rules
+        // 6. KB / Context Rules
         $system_prompt .= "\n[RULE: CONTEXT & PRIVACY]\nDo NOT mention 'Knowledge Base' or 'Context'. Answer naturally.\n";
 
-        // 6. Extra / Custom
+        // 7. Extra / Custom
         if (!empty($extra_instructions)) {
             $system_prompt .= "\nCUSTOM INSTRUCTIONS: $extra_instructions\n";
         }
@@ -392,7 +400,8 @@ class Nueva_Chatbot_API
         }
         $score_formula = implode(' + ', $likes);
 
-        $sql = "SELECT content, ($score_formula) as relevance FROM $table_name HAVING relevance > 0 ORDER BY relevance DESC LIMIT 4";
+        // Fetch source_ref as well
+        $sql = "SELECT content, source_ref, ($score_formula) as relevance FROM $table_name HAVING relevance > 0 ORDER BY relevance DESC LIMIT 4";
         $prepared_sql = $wpdb->prepare($sql, $params);
         $results = $wpdb->get_results($prepared_sql);
 
@@ -400,7 +409,9 @@ class Nueva_Chatbot_API
         if ($results) {
             $context .= "--- Knowledge Base Search Results ---\n";
             foreach ($results as $row) {
-                $context .= trim($row->content) . "\n\n";
+                // Determine source label
+                $source = !empty($row->source_ref) ? "Source URL: " . $row->source_ref : "(Manual Entry)";
+                $context .= trim($row->content) . "\n" . $source . "\n\n";
             }
             $context .= "--- End KB Results ---\n";
         }
