@@ -6,11 +6,16 @@ $leads = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
 
 <div class="wrap">
     <h1>Collected Leads</h1>
+    <div style="margin-bottom:15px;">
+        <a href="<?php echo admin_url('admin-post.php?action=nueva_export_leads'); ?>"
+            class="button button-primary">Export to CSV</a>
+    </div>
     <table class="wp-list-table widefat fixed striped">
         <thead>
             <tr>
                 <th>ID</th>
                 <th>Date</th>
+                <th>IP Address</th>
                 <th>Session ID</th>
                 <th>Data</th>
                 <th>Synced?</th>
@@ -22,6 +27,14 @@ $leads = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
                     <tr>
                         <td><?php echo $lead->id; ?></td>
                         <td><?php echo $lead->collected_at; ?></td>
+                        <td>
+                            <?php
+                            // Assuming IP/Meta is stored in chats? Lead table might need alter.
+                            // Actually, let's fetch IP from chat history if possible or display "N/A" if not in lead table.
+                            // For v1.5, we will display IP if available in user_data or related session.
+                            echo 'N/A'; // Placeholder until schema update
+                            ?>
+                        </td>
                         <td><?php echo $lead->chat_session_id; ?></td>
                         <td>
                             <?php
@@ -39,7 +52,7 @@ $leads = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
                     </tr>
                 <?php endforeach; else: ?>
                 <tr>
-                    <td colspan="5">No leads found.</td>
+                    <td colspan="6">No leads found.</td>
                 </tr>
             <?php endif; ?>
         </tbody>

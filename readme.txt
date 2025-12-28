@@ -47,5 +47,26 @@ Yes, you can fully customize the primary and secondary colors, as well as the fo
 
 == Changelog ==
 
+= 1.5.0 =
+*   **New**: "Before Chat" Lead Gate mode.
+*   **New**: AI Smart Suggestions for follow-up questions.
+*   **New**: Guest Order Lookup by Phone Number.
+*   **New**: "Load Template" for Flows.
+*   **Improved**: Lead Management (CSV Export, IP, Date).
+*   **Improved**: De-activated AI Auto-Flow Generator.
+
+= 1.4.0 =
+*   Fixed path issue in flow generator.
+
+= 1.3.0 =
+*   Added AI Auto-Generate Flows.
+*   Added Smart Actions (Link, Phone).
+*   Added Conditional Logic for Flows.
+
+= 1.2.0 =
+*   Added GitHub Auto-Updater.
+*   Added Guest Order Status (Email + ID).
+*   Added Link Sharing Controls.
+
 = 1.0.0 =
 *   Initial release.

@@ -3,19 +3,26 @@ global $wpdb;
 $table_name = $wpdb->prefix . 'bua_chat_flows';
 
 // Handle Save
+// Handle Save / Delete
 if (isset($_POST['nueva_flow_action']) && check_admin_referer('nueva_flow_verify')) {
-    $title = sanitize_text_field($_POST['flow_title']);
-    $json = wp_unslash($_POST['flow_json']); // Allow JSON structure
-    $keywords = sanitize_text_field($_POST['flow_keywords']);
+    if ($_POST['nueva_flow_action'] === 'save') {
+        $title = sanitize_text_field($_POST['flow_title']);
+        $json = wp_unslash($_POST['flow_json']);
+        $keywords = sanitize_text_field($_POST['flow_keywords']);
 
-    $wpdb->insert($table_name, [
-        'title' => $title,
-        'flow_json' => $json,
-        'trigger_keywords' => $keywords,
-        'is_active' => 1,
-        'created_at' => current_time('mysql')
-    ]);
-    echo '<div class="notice notice-success"><p>Flow saved successfully.</p></div>';
+        $wpdb->insert($table_name, [
+            'title' => $title,
+            'flow_json' => $json,
+            'trigger_keywords' => $keywords,
+            'is_active' => 1,
+            'created_at' => current_time('mysql')
+        ]);
+        echo '<div class="notice notice-success"><p>Flow saved successfully.</p></div>';
+    } elseif ($_POST['nueva_flow_action'] === 'delete') {
+        $id = intval($_POST['flow_id']);
+        $wpdb->delete($table_name, ['id' => $id]);
+        echo '<div class="notice notice-success"><p>Flow deleted successfully.</p></div>';
+    }
 }
 
 $flows = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");

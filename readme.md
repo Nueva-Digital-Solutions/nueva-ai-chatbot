@@ -11,7 +11,14 @@ An advanced AI chatbot plugin for WordPress powered by Google Gemini. Developed 
     - **Site Scan**: Auto-ingest all your WordPress Posts and Pages.
     - **URL Scraping**: Add external links for context.
     - **Manual Entry**: Structured data editor for specific FAQs or business rules.
-- **Lead Generation**: Collect visitor information seamlessly during conversations.
+    - **Manual Entry**: Structured data editor for specific FAQs or business rules.
+- **Lead Generation**: 
+    - **Conversational**: Capture details naturally during chat.
+    - **Leads Gate**: Force lead capture before starting a chat.
+    - **Export**: Download leads as CSV.
+- **Smart AI Actions**:
+    - **Suggestions**: Auto-suggested follow-up questions.
+    - **Order Lookup**: Guests can check order status via Email or Phone.
 - **Customizable Appearance**:
     - match your brand's Primary/Secondary colors.
     - Choose fonts (Roboto, Inter, Open Sans).
