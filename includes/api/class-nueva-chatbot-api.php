@@ -38,6 +38,9 @@ class Nueva_Chatbot_API
 
         add_action('wp_ajax_nueva_end_chat', array($this, 'handle_end_chat_request'));
         add_action('wp_ajax_nopriv_nueva_end_chat', array($this, 'handle_end_chat_request'));
+
+        add_action('wp_ajax_nueva_submit_feedback', array($this, 'handle_submit_feedback_request'));
+        add_action('wp_ajax_nopriv_nueva_submit_feedback', array($this, 'handle_submit_feedback_request'));
     }
 
     public function handle_upload_file_request()
@@ -96,6 +99,35 @@ class Nueva_Chatbot_API
         } else {
             wp_send_json_success('Chat ended. Transcript could not be sent.');
         }
+    }
+
+    public function handle_submit_feedback_request()
+    {
+        check_ajax_referer('nueva_chat_nonce', 'nonce');
+
+        $session_id = sanitize_text_field($_POST['session_id']);
+        $rating = intval($_POST['rating']);
+        $reason = sanitize_textarea_field($_POST['reason']);
+
+        if (empty($session_id) || $rating < 1 || $rating > 5) {
+            wp_send_json_error('Invalid feedback data.');
+        }
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'bua_chat_feedback';
+
+        $wpdb->insert(
+            $table_name,
+            array(
+                'session_id' => $session_id,
+                'rating' => $rating,
+                'reason' => $reason,
+                'created_at' => current_time('mysql')
+            ),
+            array('%s', '%d', '%s', '%s')
+        );
+
+        wp_send_json_success('Feedback saved.');
     }
 
     public function handle_ajax_request()
@@ -263,6 +295,8 @@ class Nueva_Chatbot_API
         if (!empty($extra_instructions)) {
             $system_prompt .= "\nCUSTOM INSTRUCTIONS: $extra_instructions\n";
         }
+
+        $system_prompt .= "\n[RULE: SMART ENDING]\nIf the user indicates they are done (e.g., 'No thanks', 'I'm good', 'Bye', 'No'), append the token [END_CHAT] to the end of your response.\n";
 
         $system_prompt .= "\nContext:\n$full_context";
 

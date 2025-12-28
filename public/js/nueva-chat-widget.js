@@ -160,7 +160,20 @@ jQuery(document).ready(function ($) {
         $.post(nueva_chat_vars.ajax_url, payload, function (response) {
             $('#' + loadingId).remove();
             if (response.success) {
-                appendMessage('bot', response.data.reply);
+                var reply = response.data.reply;
+
+                // Smart End-Chat Detection (v1.7.0)
+                if (reply.indexOf('[END_CHAT]') !== -1) {
+                    reply = reply.replace('[END_CHAT]', '').trim();
+                    appendMessage('bot', reply);
+
+                    // Trigger End Flow
+                    setTimeout(function () {
+                        showFeedbackForm();
+                    }, 2000); // 2s delay to read goodbye
+                } else {
+                    appendMessage('bot', reply);
+                }
             } else {
                 appendMessage('bot', 'Something went wrong.');
             }
@@ -306,39 +319,117 @@ jQuery(document).ready(function ($) {
         return text.replace(/[&<>"']/g, function (m) { return map[m]; });
     }
 
+    // --- Inactivity Logic (v1.7.0) ---
+    var lastInteraction = Date.now();
+    $input.on('keypress click', function () { lastInteraction = Date.now(); });
+    $(document).click(function () { if (isOpen) lastInteraction = Date.now(); });
+
+    setInterval(function () {
+        if (isOpen && (Date.now() - lastInteraction > 5 * 60 * 1000)) { // 5 mins
+            if (!localStorage.getItem('nueva_feedback_shown')) {
+                // Auto-trigger end chat flow if not already showing feedback
+                appendMessage('bot', 'Session timed out due to inactivity.');
+                showFeedbackForm();
+            }
+        }
+    }, 30000); // Check every 30s
+
     // End Chat Handler
     $('#nueva-chat-end').click(function () {
-        // Show Toast
         $('#nueva-toast-confirm').fadeIn();
     });
 
-    // Toast Actions
     $('#nueva-toast-no').click(function () {
         $('#nueva-toast-confirm').fadeOut();
     });
 
     $('#nueva-toast-yes').click(function () {
         $('#nueva-toast-confirm').fadeOut();
+        showFeedbackForm();
+    });
 
-        // Visual feedback
-        var $btn = $('#nueva-chat-end');
-        $btn.prop('disabled', true).text('Ending...');
+    function showFeedbackForm() {
+        if ($('#nueva-feedback-form').length > 0) return;
+        localStorage.setItem('nueva_feedback_shown', 'true');
 
+        // Clear Body & Show Form
+        $body.html('');
+
+        var html = `
+            <div id="nueva-feedback-form" style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center;">
+                <h3>Rate your experience</h3>
+                <div class="feedback-emojis" style="font-size:32px; display:flex; gap:15px; margin:20px 0; cursor:pointer;">
+                    <span data-val="1" title="Very Dissatisfied">😠</span>
+                    <span data-val="2" title="Dissatisfied">😕</span>
+                    <span data-val="3" title="Neutral">😐</span>
+                    <span data-val="4" title="Satisfied">🙂</span>
+                    <span data-val="5" title="Very Satisfied">😄</span>
+                </div>
+                <textarea id="feedback-reason" placeholder="Any comments? (Optional)" style="width:100%; height:80px; border:1px solid #ddd; padding:10px; border-radius:8px; display:none; margin-bottom:15px;"></textarea>
+                <button id="feedback-submit" class="nueva-btn-primary" style="width:100%;" disabled>Submit Feedback</button>
+                <button id="feedback-skip" style="background:none; border:none; color:#999; margin-top:10px; cursor:pointer; font-size:12px;">Skip</button>
+            </div>
+        `;
+        $body.append(html);
+        $('#nueva-chat-input').prop('disabled', true);
+
+        var selectedRating = 0;
+        $('.feedback-emojis span').click(function () {
+            $('.feedback-emojis span').css('opacity', '0.4');
+            $(this).css('opacity', '1');
+            selectedRating = $(this).data('val');
+            $('#feedback-submit').prop('disabled', false);
+
+            $('#feedback-reason').show();
+            if (selectedRating <= 3) {
+                $('#feedback-reason').attr('placeholder', 'What went wrong? (Optional)');
+            } else {
+                $('#feedback-reason').attr('placeholder', 'Any comments? (Optional)');
+            }
+        });
+
+        $('#feedback-submit').click(function () {
+            var reason = $('#feedback-reason').val();
+            submitFeedback(selectedRating, reason);
+        });
+
+        $('#feedback-skip').click(function () {
+            endSessionFinal();
+        });
+    }
+
+    function submitFeedback(rating, reason) {
+        $.post(nueva_chat_vars.ajax_url, {
+            action: 'nueva_submit_feedback',
+            session_id: session_id,
+            rating: rating,
+            reason: reason,
+            nonce: nueva_chat_vars.nonce
+        }, function () {
+            endSessionFinal();
+        });
+    }
+
+    function endSessionFinal() {
+        // Final Cleanup
+        $body.html('<div style="height:100%; display:flex; align-items:center; justify-content:center; flex-direction:column;"><h3>Thank You!</h3><p>Chat ended.</p><button onclick="location.reload()" class="nueva-btn-primary">Start New Chat</button></div>');
+
+        $('#nueva-chat-end').remove(); // Remove end button
+        localStorage.removeItem('nueva_chat_session_id');
+        localStorage.removeItem('nueva_feedback_shown');
+        localStorage.removeItem('nueva_lead_captured');
+
+        // Allow close
+        setTimeout(function () {
+            // Optional: Auto close?
+        }, 5000);
+
+        // Send actual End Chat signal to backend for transcript
         $.post(nueva_chat_vars.ajax_url, {
             action: 'nueva_end_chat',
             session_id: session_id
-        }, function (response) {
-            // Remove old session ID immediately
-            localStorage.removeItem('nueva_chat_session_id');
-
-            appendMessage('bot', 'Chat ended. Transcript sent! <br> <a href="#" onclick="location.reload();">Start New Chat</a>', false, true);
-
-            // Disable inputs
-            $input.prop('disabled', true);
-            $('#nueva-chat-send').prop('disabled', true);
-            $btn.remove(); // Remove end button
         });
-    });
+    }
 
     // --- Lead Gate Logic (v1.5.0) ---
     function checkLeadGate() {

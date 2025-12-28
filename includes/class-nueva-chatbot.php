@@ -8,7 +8,7 @@ class Nueva_Chatbot
 
     protected $loader;
     protected $plugin_name;
-    protected $version;
+    protected $version = '1.7.0';
     protected $api; // Fix undefined property
 
     public function __construct()

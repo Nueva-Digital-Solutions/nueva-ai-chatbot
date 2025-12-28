@@ -30,6 +30,12 @@ class Nueva_Chatbot_Admin
     {
         wp_enqueue_media(); // Required for Media Uploader
         wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . '../admin/js/nueva-ai-chatbot-admin.js', array('jquery', 'wp-color-picker'), $this->version, false);
+
+        // Chart.js for Dashboard
+        if (isset($_GET['page']) && $_GET['page'] === 'nueva-ai-dashboard') {
+            wp_enqueue_script('chart-js', 'https://cdn.jsdelivr.net/npm/chart.js', array(), '4.4.0', true);
+        }
+
         wp_localize_script($this->plugin_name, 'nueva_admin', array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('nueva_admin_nonce')
@@ -43,9 +49,18 @@ class Nueva_Chatbot_Admin
             'Nueva AI Chat',
             'manage_options',
             'nueva-ai-chat',
-            array($this, 'display_general_settings'), // Main page callback
+            array($this, 'display_dashboard_page'), // Dashboard as main landing
             'dashicons-superhero',
             25
+        );
+
+        add_submenu_page(
+            'nueva-ai-chat',
+            'Dashboard',
+            'Dashboard',
+            'manage_options',
+            'nueva-ai-dashboard',
+            array($this, 'display_dashboard_page')
         );
 
         add_submenu_page(
@@ -55,6 +70,15 @@ class Nueva_Chatbot_Admin
             'manage_options',
             'nueva-ai-chat',
             array($this, 'display_general_settings')
+        );
+
+        add_submenu_page(
+            'nueva-ai-chat',
+            'Feedback',
+            'Feedback',
+            'manage_options',
+            'nueva-ai-feedback',
+            array($this, 'display_feedback_page')
         );
 
         add_submenu_page(
@@ -92,6 +116,16 @@ class Nueva_Chatbot_Admin
             'nueva-ai-history',
             array($this, 'display_history_page')
         );
+    }
+
+    public function display_dashboard_page()
+    {
+        require_once plugin_dir_path(__FILE__) . '../admin/partials/nueva-ai-chatbot-dashboard.php';
+    }
+
+    public function display_feedback_page()
+    {
+        require_once plugin_dir_path(__FILE__) . '../admin/partials/nueva-ai-chatbot-feedback.php';
     }
 
     public function display_general_settings()
