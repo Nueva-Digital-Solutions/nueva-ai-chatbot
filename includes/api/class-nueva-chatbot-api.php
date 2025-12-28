@@ -10,7 +10,13 @@ class Nueva_Chatbot_API
     {
         $options = get_option('nueva_chat_options');
         $this->api_key = isset($options['general']['api_key']) ? $options['general']['api_key'] : '';
-        $this->model = isset($options['general']['model']) ? $options['general']['model'] : 'gemini-1.5-pro';
+
+        $selected_model = isset($options['general']['model']) ? $options['general']['model'] : 'gemini-2.5-flash';
+        if ($selected_model === 'custom' && !empty($options['general']['model_custom'])) {
+            $this->model = $options['general']['model_custom'];
+        } else {
+            $this->model = $selected_model;
+        }
     }
 
     public function register_routes()

@@ -41,14 +41,18 @@ $visibility = $options['visibility'];
                     <th scope="row">AI Model</th>
                     <td>
                         <select name="nueva_model" id="nueva_model_select">
-                            <option value="gemini-2.0-flash" <?php selected($general['model'], 'gemini-2.0-flash'); ?>>
-                                Gemini 2.0 Flash (Latest)</option>
+                            <option value="gemini-2.5-flash" <?php selected($general['model'], 'gemini-2.5-flash'); ?>>
+                                Gemini 2.5 Flash</option>
+                            <option value="gemini-2.5-flash-lite" <?php selected($general['model'], 'gemini-2.5-flash-lite'); ?>>
+                                Gemini 2.5 Flash Lite</option>
+                            <option value="gemini-3-flash-preview" <?php selected($general['model'], 'gemini-3-flash-preview'); ?>>
+                                Gemini 3.0 Flash Preview</option>
+                            <option value="gemini-3-pro-preview" <?php selected($general['model'], 'gemini-3-pro-preview'); ?>>
+                                Gemini 3.0 Pro Preview</option>
                             <option value="gemini-1.5-flash" <?php selected($general['model'], 'gemini-1.5-flash'); ?>>
-                                Gemini 1.5 Flash</option>
+                                Gemini 1.5 Flash (Legacy)</option>
                             <option value="gemini-1.5-pro" <?php selected($general['model'], 'gemini-1.5-pro'); ?>>
-                                Gemini 1.5 Pro (Best Quality)</option>
-                            <option value="gemini-1.5-flash-8b" <?php selected($general['model'], 'gemini-1.5-flash-8b'); ?>>
-                                Gemini 1.5 Flash-8B (Efficient)</option>
+                                Gemini 1.5 Pro (Legacy)</option>
                             <option value="custom" <?php selected($general['model'], 'custom'); ?>>
                                 Custom / Other...</option>
                         </select>
