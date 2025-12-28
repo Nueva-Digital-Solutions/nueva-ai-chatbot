@@ -44,11 +44,19 @@ class Nueva_Chatbot_Public
 
         // Dynamic CSS
         $appearance = $this->options['appearance'];
+        $accent_color = isset($appearance['accent_color']) ? $appearance['accent_color'] : $appearance['primary_color']; // Default to primary if not set
+
+        // Font URL Construction
+        $font_family = $appearance['font_family'];
+        $font_url = 'https://fonts.googleapis.com/css2?family=' . urlencode($font_family) . ':wght@400;500;700&display=swap';
+        wp_enqueue_style('nueva-google-fonts', $font_url, array(), null);
+
         $css = "
             :root {
                 --nueva-primary: " . esc_attr($appearance['primary_color']) . ";
                 --nueva-secondary: " . esc_attr($appearance['secondary_color']) . ";
-                --nueva-font: '" . esc_attr($appearance['font_family']) . "', sans-serif;
+                --nueva-accent: " . esc_attr($accent_color) . ";
+                --nueva-font: '" . esc_attr($font_family) . "', sans-serif;
                 --nueva-font-size: " . intval($appearance['font_size']) . "px;
             }
             .nueva-chat-widget {
@@ -76,6 +84,9 @@ class Nueva_Chatbot_Public
             'is_logged_in' => is_user_logged_in(),
             'agent_name' => esc_js($this->options['general']['agent_name']),
             'profile_image' => esc_url($this->options['appearance']['profile_image']),
+            'primary_col' => esc_attr($this->options['appearance']['primary_color']), // for generic use
+            'secondary_col' => esc_attr($this->options['appearance']['secondary_color']),
+            'accent_col' => esc_attr(isset($this->options['appearance']['accent_color']) ? $this->options['appearance']['accent_color'] : $this->options['appearance']['primary_color']),
             'initial_message' => esc_js(isset($this->options['behavior']['initial_message']) && !empty($this->options['behavior']['initial_message']) ? $this->options['behavior']['initial_message'] : 'Hello! How can I help you today?')
         ));
 

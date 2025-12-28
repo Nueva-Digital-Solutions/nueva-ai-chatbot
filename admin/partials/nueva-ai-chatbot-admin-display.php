@@ -105,15 +105,52 @@ $visibility = $options['visibility'];
                             data-default-color="#ffffff" /></td>
                 </tr>
                 <tr>
+                    <th scope="row">Accent Color (Buttons/Highlights)</th>
+                    <td><input type="text" name="nueva_accent_color"
+                            value="<?php echo isset($appearance['accent_color']) ? esc_attr($appearance['accent_color']) : '#0073aa'; ?>"
+                            class="my-color-field" data-default-color="#0073aa" /></td>
+                </tr>
+                <tr>
                     <th scope="row">Font Family</th>
                     <td>
+                        <?php
+                        $fonts = [
+                            'Roboto',
+                            'Inter',
+                            'Open Sans',
+                            'Lato',
+                            'Montserrat',
+                            'Oswald',
+                            'Source Sans Pro',
+                            'Slabo 27px',
+                            'Raleway',
+                            'PT Sans',
+                            'Merriweather',
+                            'Noto Sans',
+                            'Nunito Sans',
+                            'Prompt',
+                            'Work Sans',
+                            'Quicksand',
+                            'Rubik',
+                            'Fira Sans',
+                            'Barlow',
+                            'Mulish',
+                            'Oxygen',
+                            'Mukta',
+                            'Heebo',
+                            'Ubuntu',
+                            'Playfair Display',
+                            'Poppins'
+                        ];
+                        sort($fonts);
+                        ?>
                         <select name="nueva_font_family">
-                            <option value="Roboto" <?php selected($appearance['font_family'], 'Roboto'); ?>>Roboto
-                            </option>
-                            <option value="Inter" <?php selected($appearance['font_family'], 'Inter'); ?>>Inter</option>
-                            <option value="Open Sans" <?php selected($appearance['font_family'], 'Open Sans'); ?>>Open
-                                Sans</option>
+                            <?php foreach ($fonts as $font): ?>
+                                <option value="<?php echo $font; ?>" <?php selected($appearance['font_family'], $font); ?>>
+                                    <?php echo $font; ?></option>
+                            <?php endforeach; ?>
                         </select>
+                        <p class="description">Standard Google Fonts.</p>
                     </td>
                 </tr>
                 <tr>

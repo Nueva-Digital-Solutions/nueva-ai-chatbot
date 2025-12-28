@@ -123,12 +123,8 @@ jQuery(document).ready(function ($) {
         if (suggestions.length > 0) {
             const $chips = $('<div class="nueva-suggestions" style="margin-top:5px; display:flex; gap:5px; flex-wrap:wrap; padding: 0 10px; margin-bottom:10px;"></div>');
             suggestions.forEach(s => {
-                const $btn = $(`<button style="font-size:12px; padding:6px 12px; background:#fff; border:1px solid ${nueva_chat_vars.primary_col}; color:${nueva_chat_vars.primary_col}; border-radius:15px; cursor:pointer; font-weight:500; transition:all 0.2s;">${s}</button>`);
-
-                $btn.hover(
-                    function () { $(this).css({ background: nueva_chat_vars.primary_col, color: '#fff' }); },
-                    function () { $(this).css({ background: '#fff', color: nueva_chat_vars.primary_col }); }
-                );
+                // Style: Accent color border/text, White background. No hover logic.
+                const $btn = $(`<button style="font-size:12px; padding:6px 12px; background:${nueva_chat_vars.secondary_col || '#fff'}; border:1px solid ${nueva_chat_vars.accent_col}; color:${nueva_chat_vars.accent_col}; border-radius:15px; cursor:pointer; font-weight:500;">${s}</button>`);
 
                 $btn.click(function () {
                     sendMessage(s);

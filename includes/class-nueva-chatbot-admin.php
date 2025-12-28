@@ -28,7 +28,8 @@ class Nueva_Chatbot_Admin
 
     public function enqueue_scripts()
     {
-        wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . '../admin/js/nueva-ai-chatbot-admin.js', array('jquery', 'wp-color-picker', 'media-upload'), $this->version, false);
+        wp_enqueue_media(); // Required for Media Uploader
+        wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . '../admin/js/nueva-ai-chatbot-admin.js', array('jquery', 'wp-color-picker'), $this->version, false);
         wp_localize_script($this->plugin_name, 'nueva_admin', array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('nueva_admin_nonce')
@@ -218,6 +219,7 @@ class Nueva_Chatbot_Admin
                 'primary_gradient_start' => sanitize_hex_color($_POST['nueva_primary_gradient_start']),
                 'primary_gradient_end' => sanitize_hex_color($_POST['nueva_primary_gradient_end']),
                 'secondary_color' => sanitize_hex_color($_POST['nueva_secondary_color']),
+                'accent_color' => sanitize_hex_color($_POST['nueva_accent_color']), // Added Accent Color
                 'font_family' => sanitize_text_field($_POST['nueva_font_family']),
                 'font_size' => intval($_POST['nueva_font_size']),
                 'position_desktop' => sanitize_text_field($_POST['nueva_position_desktop']),
