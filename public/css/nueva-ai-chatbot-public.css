@@ -308,3 +308,54 @@
     font-style: italic;
     background: #f0f0f0;
 }
+
+/* Toast Popup */
+.nueva-toast {
+    position: absolute;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    background: #fff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 15px;
+    z-index: 1000;
+    text-align: center;
+    border: 1px solid #eee;
+    animation: nuevaSlideUp 0.3s ease-out;
+}
+
+.nueva-toast p {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #333;
+    font-weight: 500;
+}
+
+.nueva-toast-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.nueva-btn-primary {
+    background: var(--nueva-primary, #0073aa);
+    color: #fff;
+    border: none;
+    padding: 6px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.nueva-btn-secondary {
+    background: #f0f0f1;
+    color: #333;
+    border: 1px solid #ccc;
+    padding: 6px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}

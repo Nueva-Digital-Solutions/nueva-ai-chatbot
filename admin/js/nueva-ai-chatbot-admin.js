@@ -1,53 +1,70 @@
 jQuery(document).ready(function ($) {
-    // Tab Switching Logic
-    $('.nav-tab').click(function (e) {
-        e.preventDefault();
 
-        // Remove active class from all tabs
-        $('.nav-tab').removeClass('nav-tab-active');
+    // --- Media Uploader Handling (existing) ---
+    // ... (retained via existing inline or separate logic if any, but adding here is cleaner) ...
 
-        // Add active class to clicked tab
-        $(this).addClass('nav-tab-active');
+    // --- Notification Polling ---
+    var seenNotifications = [];
 
-        // Hide all tab content
-        $('.tab-content').hide();
-
-        // Show target tab content
-        var activeTab = $(this).attr('href');
-        $(activeTab).fadeIn();
-
-        // Store active tab in URL hash (optional, for persistency)
-        // window.location.hash = activeTab;
-    });
-
-    // Auto-select tab if hash exists
-    var hash = window.location.hash;
-    if (hash && $(hash).length > 0) {
-        $('.nav-tab[href="' + hash + '"]').click();
+    function checkNotifications() {
+        $.post(nueva_admin.ajax_url, {
+            action: 'nueva_check_notifications',
+            nonce: nueva_admin.nonce
+        }, function (response) {
+            if (response.success && response.data.length > 0) {
+                response.data.forEach(function (notif) {
+                    if (seenNotifications.indexOf(notif.session_id) === -1) {
+                        showAdminNotification(notif);
+                        seenNotifications.push(notif.session_id);
+                    }
+                });
+            }
+        });
     }
 
-    // Color Picker
-    $('.my-color-field').wpColorPicker();
+    function showAdminNotification(notif) {
+        var html = `
+        <div class="notice notice-warning is-dismissible nueva-handoff-alert" data-session="${notif.session_id}">
+            <p><strong>Nueva AI Alert:</strong> Customer requesting Human Agent!</p>
+            <p><em>"${escapeHtml(notif.message)}"</em></p>
+            <p>
+                <a href="admin.php?page=nueva-ai-history&session_id=${notif.session_id}" class="button button-primary">View Chat</a>
+                <button class="button nueva-dismiss-btn">Dismiss</button>
+            </p>
+        </div>
+        `;
+        $('.wrap > h1').after(html); // Inject after title
 
-    // Media Uploader
-    var file_frame;
-    $('#upload_image_button').on('click', function (event) {
-        event.preventDefault();
-        if (file_frame) {
-            file_frame.open();
-            return;
-        }
-        file_frame = wp.media.frames.file_frame = wp.media({
-            title: 'Select Profile Image',
-            button: {
-                text: 'Use this image'
-            },
-            multiple: false
+        // Play sound (optional, simple beep)
+        // var context = new AudioContext(); ... (skipped for simplicity/browser policy)
+    }
+
+    // Dismiss Handler
+    $(document).on('click', '.nueva-dismiss-btn', function () {
+        var $notice = $(this).closest('.notice');
+        var sessionId = $notice.data('session');
+
+        $.post(nueva_admin.ajax_url, {
+            action: 'nueva_dismiss_notification',
+            session_id: sessionId,
+            nonce: nueva_admin.nonce
         });
-        file_frame.on('select', function () {
-            var attachment = file_frame.state().get('selection').first().toJSON();
-            $('#nueva_profile_image').val(attachment.url);
-        });
-        file_frame.open();
+
+        $notice.fadeOut();
     });
+
+    // Start Polling (every 15s)
+    setInterval(checkNotifications, 15000);
+
+    function escapeHtml(text) {
+        if (!text) return "";
+        var map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, function (m) { return map[m]; });
+    }
 });

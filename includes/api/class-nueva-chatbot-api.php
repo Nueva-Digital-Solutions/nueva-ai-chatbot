@@ -67,7 +67,7 @@ class Nueva_Chatbot_API
             $this->save_message($session_id, 'user', $message);
         }
 
-        $response = $this->query_gemini($message);
+        $response = $this->query_gemini($message, $session_id);
 
         // Save Bot Message
         if ($session_id) {
@@ -89,7 +89,7 @@ class Nueva_Chatbot_API
             $this->save_message($session_id, 'user', $message);
         }
 
-        $response = $this->query_gemini($message);
+        $response = $this->query_gemini($message, $session_id);
 
         if ($session_id) {
             $this->save_message($session_id, 'bot', $response);
@@ -98,16 +98,32 @@ class Nueva_Chatbot_API
         return new WP_REST_Response(array('reply' => $response), 200);
     }
 
-    private function query_gemini($user_message)
+    private function query_gemini($user_message, $session_id)
     {
         if (empty($this->api_key)) {
             return "Error: API Key is missing. Please contact the administrator.";
         }
 
-        // Get Options for Persona
+        // Get Options
         $options = get_option('nueva_chat_options');
         $agent_name = isset($options['general']['agent_name']) ? $options['general']['agent_name'] : 'Nueva Agent';
         $tone = isset($options['behavior']['tone']) ? $options['behavior']['tone'] : 'professional';
+        $instructions = isset($options['behavior']['agent_instructions']) ? $options['behavior']['agent_instructions'] : '';
+        $enable_handoff = isset($options['behavior']['enable_handoff']) ? $options['behavior']['enable_handoff'] : false;
+        $lead_fields = isset($options['behavior']['lead_fields']) ? $options['behavior']['lead_fields'] : 'email or phone number';
+
+        // --- HANDOFF LOGIC START ---
+        if ($enable_handoff && $this->check_handoff_request($user_message)) {
+            // Check if we have lead info
+            if (!$this->has_lead_info($session_id)) {
+                return "I can connect you with a human agent. First, please provide your $lead_fields so they can contact you.";
+            } else {
+                // Trigger Notification
+                $this->add_admin_notification($session_id, $user_message);
+                return "I have notified a human agent. They will join shortly or contact you via the details provided. Is there anything else I can help with in the meantime?";
+            }
+        }
+        // --- HANDOFF LOGIC END ---
 
         // 1. Context Retrieval (KB)
         $kb_context = $this->get_kb_context($user_message);
@@ -118,12 +134,13 @@ class Nueva_Chatbot_API
         $full_context = $kb_context . "\n" . $user_context;
 
         // 3. Construct Prompt with Persona & Strictness
-        // STRICT mode: "do not use outside knowledge"
         $system_prompt = "You are $agent_name. Your tone is $tone. 
 You are an AI support agent for this specific website. 
 STRICT INSTRUCTION: Answer the user's question using ONLY the context provided below. 
 If the answer is not in the context, politely say 'I cannot find that information in my knowledge base' or offer to connect them with human support. 
 Do NOT make up information or use general knowledge outside of what is provided.
+
+CUSTOM INSTRUCTIONS: $instructions
 
 Context:
 $full_context";
@@ -169,6 +186,50 @@ $full_context";
         }
 
         return "I didn't understand that. Could you rephrase?";
+    }
+
+    // Helper: Detect Handoff Intent (Simple Keyword for now, could use AI classifier)
+    private function check_handoff_request($message)
+    {
+        $keywords = ['human', 'agent', 'support', 'person', 'talk to someone', 'real person'];
+        foreach ($keywords as $word) {
+            if (stripos($message, $word) !== false) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function has_lead_info($session_id)
+    {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'bua_leads';
+        $lead = $wpdb->get_row($wpdb->prepare("SELECT id FROM $table_name WHERE chat_session_id = %s", $session_id));
+        return !empty($lead);
+    }
+
+    private function add_admin_notification($session_id, $message)
+    {
+        // Store in transient or option queue for Admin Polling
+        $notifications = get_option('nueva_admin_notifications', []);
+        if (!is_array($notifications))
+            $notifications = [];
+
+        // Add new
+        $notifications[] = [
+            'type' => 'handoff',
+            'session_id' => $session_id,
+            'message' => $message,
+            'time' => time(),
+            'read' => false
+        ];
+
+        // Keep only last 20
+        if (count($notifications) > 20) {
+            array_shift($notifications);
+        }
+
+        update_option('nueva_admin_notifications', $notifications);
     }
 
     private function capture_lead($session_id, $message)

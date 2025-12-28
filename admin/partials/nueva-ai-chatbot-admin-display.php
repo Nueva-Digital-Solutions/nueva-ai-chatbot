@@ -180,11 +180,40 @@ $visibility = $options['visibility'];
                     </td>
                 </tr>
                 <tr>
+                    <th scope="row">Custom Agent Instructions</th>
+                    <td>
+                        <textarea name="nueva_agent_instructions" class="large-text" rows="5"
+                            placeholder="e.g. You are a helpful assistant for a car dealership. Always mention our warranty."><?php echo isset($behavior['agent_instructions']) ? esc_textarea($behavior['agent_instructions']) : ''; ?></textarea>
+                        <p class="description">Specific instructions for the AI's behavior and knowledge.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Lead Collection Criteria</th>
+                    <td>
+                        <input type="text" name="nueva_lead_fields"
+                            value="<?php echo isset($behavior['lead_fields']) ? esc_attr($behavior['lead_fields']) : 'email, phone'; ?>"
+                            class="regular-text" />
+                        <p class="description">What info should the AI try to collect? (e.g., "email, phone, company
+                            name")</p>
+                    </td>
+                </tr>
+                <tr>
                     <th scope="row">Initial Welcome Message</th>
                     <td>
                         <textarea name="nueva_initial_message" class="large-text"
                             rows="3"><?php echo isset($behavior['initial_message']) ? esc_textarea($behavior['initial_message']) : 'Hello! How can I help you today?'; ?></textarea>
                         <p class="description">The first message the chatbot sends to the user.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Human Handoff</th>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="nueva_enable_handoff" value="1" <?php checked(isset($behavior['enable_handoff']) && $behavior['enable_handoff']); ?> />
+                            Enable Human Handoff
+                        </label>
+                        <p class="description">If enabled, the AI will notify Admin when a user asks for human support
+                            (only after collecting leads).</p>
                     </td>
                 </tr>
                 <tr>

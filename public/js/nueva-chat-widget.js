@@ -88,27 +88,37 @@ jQuery(document).ready(function ($) {
 
     // End Chat Handler
     $('#nueva-chat-end').click(function () {
-        if (confirm("End current chat and email transcript?")) {
-            // Visual feedback
-            var $btn = $(this);
-            $btn.prop('disabled', true).text('Ending...');
+        // Show Toast
+        $('#nueva-toast-confirm').fadeIn();
+    });
 
-            $.post(nueva_chat_vars.ajax_url, {
-                action: 'nueva_end_chat',
-                session_id: session_id
-            }, function (response) {
-                // Remove old session ID immediately
-                localStorage.removeItem('nueva_chat_session_id');
+    // Toast Actions
+    $('#nueva-toast-no').click(function () {
+        $('#nueva-toast-confirm').fadeOut();
+    });
 
-                $body.append('<div class="message bot">Chat ended. Transcript sent! <br> <a href="#" onclick="location.reload();">Start New Chat</a></div>');
-                scrollToBottom();
+    $('#nueva-toast-yes').click(function () {
+        $('#nueva-toast-confirm').fadeOut();
 
-                // Disable inputs
-                $input.prop('disabled', true);
-                $('#nueva-chat-send').prop('disabled', true);
-                $btn.remove(); // Remove end button
-            });
-        }
+        // Visual feedback
+        var $btn = $('#nueva-chat-end');
+        $btn.prop('disabled', true).text('Ending...');
+
+        $.post(nueva_chat_vars.ajax_url, {
+            action: 'nueva_end_chat',
+            session_id: session_id
+        }, function (response) {
+            // Remove old session ID immediately
+            localStorage.removeItem('nueva_chat_session_id');
+
+            $body.append('<div class="message bot">Chat ended. Transcript sent! <br> <a href="#" onclick="location.reload();">Start New Chat</a></div>');
+            scrollToBottom();
+
+            // Disable inputs
+            $input.prop('disabled', true);
+            $('#nueva-chat-send').prop('disabled', true);
+            $btn.remove(); // Remove end button
+        });
     });
 
     // --- SECURITY: Branding Integrity Check ---

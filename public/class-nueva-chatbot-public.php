@@ -141,6 +141,14 @@ class Nueva_Chatbot_Public
                             Digital</a>
                     </div>
                 </div>
+                <!-- Custom Toast Confirmation -->
+                <div id="nueva-toast-confirm" class="nueva-toast" style="display:none;">
+                    <p>End chat and email transcript?</p>
+                    <div class="nueva-toast-actions">
+                        <button id="nueva-toast-yes" class="nueva-btn-primary">Yes, End</button>
+                        <button id="nueva-toast-no" class="nueva-btn-secondary">Cancel</button>
+                    </div>
+                </div>
             </div>
         </div>
         <?php

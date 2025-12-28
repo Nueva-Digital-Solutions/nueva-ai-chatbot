@@ -13,6 +13,10 @@ class Nueva_Chatbot_Admin
     {
         $this->plugin_name = $plugin_name;
         $this->version = $version;
+
+        // Register AJAX (Admin side)
+        add_action('wp_ajax_nueva_check_notifications', array($this, 'ajax_check_notifications'));
+        add_action('wp_ajax_nueva_dismiss_notification', array($this, 'ajax_dismiss_notification'));
     }
 
     public function enqueue_styles()
@@ -120,6 +124,46 @@ class Nueva_Chatbot_Admin
         $history->display_page();
     }
 
+    public function define_admin_hooks()
+    {
+        // ... existing hooks ...
+        add_action('wp_ajax_nueva_check_notifications', array($this, 'ajax_check_notifications'));
+        add_action('wp_ajax_nueva_dismiss_notification', array($this, 'ajax_dismiss_notification'));
+    }
+
+    public function ajax_check_notifications()
+    {
+        check_ajax_referer('nueva_admin_nonce', 'nonce');
+
+        $notifications = get_option('nueva_admin_notifications', []);
+        $unread = [];
+
+        if (!empty($notifications)) {
+            foreach ($notifications as $n) {
+                if (!$n['read']) {
+                    $unread[] = $n;
+                }
+            }
+        }
+
+        wp_send_json_success($unread);
+    }
+
+    public function ajax_dismiss_notification()
+    {
+        check_ajax_referer('nueva_admin_nonce', 'nonce');
+        $session_id = sanitize_text_field($_POST['session_id']);
+
+        $notifications = get_option('nueva_admin_notifications', []);
+        foreach ($notifications as &$n) {
+            if ($n['session_id'] === $session_id) {
+                $n['read'] = true;
+            }
+        }
+        update_option('nueva_admin_notifications', $notifications);
+        wp_send_json_success();
+    }
+
     private function save_settings()
     {
         // Update Options
@@ -144,7 +188,10 @@ class Nueva_Chatbot_Admin
             ),
             'behavior' => array(
                 'tone' => sanitize_text_field($_POST['nueva_tone']),
+                'agent_instructions' => sanitize_textarea_field($_POST['nueva_agent_instructions']),
+                'lead_fields' => sanitize_text_field($_POST['nueva_lead_fields']),
                 'initial_message' => sanitize_textarea_field($_POST['nueva_initial_message']),
+                'enable_handoff' => isset($_POST['nueva_enable_handoff']) ? (bool) $_POST['nueva_enable_handoff'] : false,
                 'default_lang' => sanitize_text_field($_POST['nueva_default_lang']),
                 'supported_langs' => sanitize_text_field($_POST['nueva_supported_langs']),
             ),
