@@ -87,17 +87,24 @@ jQuery(document).ready(function ($) {
     // End Chat Handler
     $('#nueva-chat-end').click(function () {
         if (confirm("End current chat and email transcript?")) {
+            // Visual feedback
+            var $btn = $(this);
+            $btn.prop('disabled', true).text('Ending...');
+
             $.post(nueva_chat_vars.ajax_url, {
                 action: 'nueva_end_chat',
                 session_id: session_id
             }, function (response) {
-                $body.append('<div class="message bot">Chat ended. Transcript sent!</div>');
-                scrollToBottom();
-                // Clear session
+                // Remove old session ID immediately
                 localStorage.removeItem('nueva_chat_session_id');
-                // Create new session for next time? Or just leave it.
-                session_id = 'sess_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-                localStorage.setItem('nueva_chat_session_id', session_id);
+
+                $body.append('<div class="message bot">Chat ended. Transcript sent! <br> <a href="#" onclick="location.reload();">Start New Chat</a></div>');
+                scrollToBottom();
+
+                // Disable inputs
+                $input.prop('disabled', true);
+                $('#nueva-chat-send').prop('disabled', true);
+                $btn.remove(); // Remove end button
             });
         }
     });

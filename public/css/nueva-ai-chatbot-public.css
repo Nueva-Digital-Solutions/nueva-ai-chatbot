@@ -2,102 +2,125 @@
     position: fixed;
     bottom: 20px;
     z-index: 999999;
-    font-family: var(--nueva-font);
-    font-size: var(--nueva-font-size);
+    font-family: var(--nueva-font, 'Segoe UI', sans-serif);
+    font-size: var(--nueva-font-size, 16px);
 }
 
 .nueva-chat-button {
     width: 60px;
     height: 60px;
-    background-color: var(--nueva-primary, #0073aa);
+    background: linear-gradient(135deg, var(--nueva-primary, #0073aa), #005a87);
     border-radius: 50%;
     color: var(--nueva-secondary, #ffffff);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    transition: transform 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .nueva-chat-button:hover {
-    transform: scale(1.1);
+    transform: scale(1.1) translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }
 
 .nueva-chat-button .dashicons {
-    font-size: 30px;
-    width: 30px;
-    height: 30px;
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
 }
 
 .nueva-chat-window {
     position: absolute;
     bottom: 80px;
-    width: 350px;
-    height: 500px;
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    width: 380px;
+    height: 600px;
+    max-height: 80vh;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
     display: none;
     flex-direction: column;
     overflow: hidden;
     right: 0;
-    /* Align with button default */
+    font-size: 14px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    animation: nuevaSlideUp 0.3s ease-out;
 }
 
-/* Adjust window alignment based on button position context handled by JS/Logic if needed, 
-   but parent relative positioning handles most cases */
+@keyframes nuevaSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .nueva-chat-widget.left-aligned .nueva-chat-window {
     left: 0;
     right: auto;
 }
 
 .nueva-chat-header {
-    background-color: var(--nueva-primary);
-    color: var(--nueva-secondary);
-    padding: 15px;
+    background: linear-gradient(135deg, var(--nueva-primary, #0073aa), #005a87);
+    color: var(--nueva-secondary, #fff);
+    padding: 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .agent-info {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-weight: bold;
+    gap: 12px;
+    font-weight: 600;
+    font-size: 1.1em;
 }
 
 .agent-avatar {
-    width: 30px;
-    height: 30px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     object-fit: cover;
-    background: #ccc;
+    background: #fff;
+    border: 2px solid rgba(255, 255, 255, 0.8);
 }
 
 .close-chat {
     background: none;
     border: none;
-    color: var(--nueva-secondary);
-    font-size: 24px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 28px;
     cursor: pointer;
+    transition: color 0.2s;
+    line-height: 1;
+}
+
+.close-chat:hover {
+    color: #fff;
 }
 
 .nueva-chat-body {
     flex: 1;
-    padding: 15px;
+    padding: 20px;
     overflow-y: auto;
-    background: #f9f9f9;
+    background: #f4f6f9;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 15px;
     min-height: 0;
-    /* Important for flex child scrolling */
-    scrollbar-width: thin;
-    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+    /* Crucial for scrolling */
+    scroll-behavior: smooth;
 }
 
+/* Scrollbar Styling */
 .nueva-chat-body::-webkit-scrollbar {
     width: 6px;
 }
@@ -107,64 +130,126 @@
 }
 
 .nueva-chat-body::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+.nueva-chat-body::-webkit-scrollbar-thumb:hover {
     background-color: rgba(0, 0, 0, 0.2);
-    border-radius: 3px;
 }
 
 .message {
-    max-width: 80%;
-    padding: 10px 15px;
-    border-radius: 15px;
-    font-size: 0.9em;
-    line-height: 1.4;
+    max-width: 85%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    font-size: 0.95em;
+    line-height: 1.5;
+    position: relative;
+    word-wrap: break-word;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .message.bot {
     align-self: flex-start;
-    background: #e9e9e9;
+    background: #ffffff;
     color: #333;
-    border-bottom-left-radius: 2px;
+    border-bottom-left-radius: 4px;
 }
 
 .message.user {
     align-self: flex-end;
-    background: var(--nueva-primary);
-    color: var(--nueva-secondary);
-    border-bottom-right-radius: 2px;
+    background: var(--nueva-primary, #0073aa);
+    color: var(--nueva-secondary, #fff);
+    border-bottom-right-radius: 4px;
+    /* Optional: gradient for user bubbles too */
+    background: linear-gradient(135deg, var(--nueva-primary, #0073aa), #006090);
+}
+
+.message.error {
+    background: #ffebee;
+    color: #c62828;
+    border: 1px solid #ffcdd2;
 }
 
 .nueva-chat-footer {
-    padding: 10px;
-    border-top: 1px solid #eee;
+    padding: 15px;
     background: #fff;
+    border-top: 1px solid #eee;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
 }
 
 .nueva-chat-footer input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 20px;
-    margin-bottom: 5px;
-    box-sizing: border-box;
+    flex: 1;
+    padding: 12px 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 25px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-size: 14px;
+    min-width: 150px;
+}
+
+.nueva-chat-footer input:focus {
+    border-color: var(--nueva-primary, #0073aa);
 }
 
 .nueva-chat-footer button {
-    width: 100%;
-    padding: 8px;
-    background: var(--nueva-primary);
-    color: var(--nueva-secondary);
+    padding: 10px 20px;
+    background: var(--nueva-primary, #0073aa);
+    color: var(--nueva-secondary, #fff);
     border: none;
-    border-radius: 5px;
+    border-radius: 25px;
     cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+}
+
+.nueva-chat-footer button:hover {
+    opacity: 0.9;
+}
+
+/* End Chat Button Styling */
+.nueva-end-chat-btn {
+    background: #ff4757 !important;
+    /* Premium red */
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px !important;
+    padding: 8px 12px !important;
+}
+
+.nueva-end-chat-btn:hover {
+    background: #e04040 !important;
 }
 
 .nueva-powered-by {
+    width: 100%;
     text-align: center;
-    font-size: 10px;
+    font-size: 11px;
+    color: #aaa;
     margin-top: 5px;
 }
 
 .nueva-powered-by a {
-    color: #999;
+    color: #aaa;
     text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.nueva-powered-by a:hover {
+    color: var(--nueva-primary, #0073aa);
+}
+
+/* Typing Indicator */
+.message.typing {
+    color: #888;
+    font-style: italic;
+    background: #f0f0f0;
 }

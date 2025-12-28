@@ -121,8 +121,9 @@ class Nueva_Chatbot_Public
                 <div class="nueva-chat-footer">
                     <input type="text" id="nueva-chat-input" placeholder="Type a message...">
                     <button id="nueva-chat-send">Send</button>
-                    <button id="nueva-chat-end" title="End Chat & Email Transcript"
-                        style="background:#cc0000; margin-left:5px;">&times;</button>
+                    <button id="nueva-chat-end" title="End Chat & Email Transcript" class="nueva-end-chat-btn">
+                        End Chat &times;
+                    </button>
                     <!-- Branding: Critical Requirement -->
                     <div class="nueva-powered-by">
                         <a href="https://nuevadigital.co.in" target="_blank" id="nueva-branding-link">Powered by Nueva
