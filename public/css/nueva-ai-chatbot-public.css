@@ -182,8 +182,7 @@
     background: var(--nueva-primary, #0073aa);
     color: var(--nueva-secondary, #fff);
     border-bottom-right-radius: 4px;
-    /* Optional: gradient for user bubbles too */
-    background: linear-gradient(135deg, var(--nueva-primary, #0073aa), #006090);
+    /* Solid color only, gradient removed */
 }
 
 .message.error {

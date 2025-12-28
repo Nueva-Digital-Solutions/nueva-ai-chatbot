@@ -91,7 +91,7 @@ jQuery(document).ready(function ($) {
         return { cleanText: text, suggestions: [] };
     }
 
-    function appendMessage(sender, text, hidden = false) {
+    function appendMessage(sender, text, hidden = false, allowHtml = false) {
         if (hidden) return;
 
         let displayText = text;
@@ -103,8 +103,10 @@ jQuery(document).ready(function ($) {
             suggestions = parsed.suggestions;
         }
 
-        // 1. Escape HTML first (Security)
-        displayText = escapeHtml(displayText);
+        // 1. Escape HTML first (Security) - Skip if allowed
+        if (!allowHtml) {
+            displayText = escapeHtml(displayText);
+        }
 
         // 2. Simple Markdown
         let formattedText = displayText
@@ -113,6 +115,7 @@ jQuery(document).ready(function ($) {
             .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:inherit; text-decoration:underline;">$1</a>')
             .replace(/\n/g, '<br>');
 
+        // HTML Construction
         // Fix: Use 'message' class to match CSS. 
         // Only apply inline styles for USER (primary color). Let CSS handle BOT (white).
         let inlineStyle = '';
@@ -120,13 +123,52 @@ jQuery(document).ready(function ($) {
             inlineStyle = `style="background-color: ${nueva_chat_vars.primary_col}; color: #fff;"`;
         }
 
-        const msgHtml = `<div class="message ${sender}" ${inlineStyle}>
-            ${formattedText}
-        </div>`;
+        const $msgContainer = $(`<div class="message ${sender}" ${inlineStyle}></div>`);
+        $body.append($msgContainer);
 
-        $body.append(msgHtml);
+        if (sender === 'bot') {
+            typeWriter($msgContainer, formattedText, function () {
+                if (suggestions.length > 0) {
+                    renderSuggestions(suggestions);
+                }
+            });
+        } else {
+            $msgContainer.html(formattedText);
+            scrollToBottom();
+        }
+    }
 
-        // Render Suggestions Chips
+    function typeWriter($element, html, onComplete) {
+        let i = 0;
+        let speed = 15; // ms per char
+
+        function type() {
+            if (i < html.length) {
+                let char = html.charAt(i);
+
+                // Fast-forward tags to render valid HTML
+                if (char === '<') {
+                    let closingIdx = html.indexOf('>', i);
+                    if (closingIdx !== -1) {
+                        i = closingIdx + 1;
+                    } else {
+                        i++;
+                    }
+                } else {
+                    i++;
+                }
+
+                $element.html(html.substring(0, i));
+                scrollToBottom();
+                setTimeout(type, speed);
+            } else {
+                if (onComplete) onComplete();
+            }
+        }
+        type();
+    }
+
+    function renderSuggestions(suggestions) {
         if (suggestions.length > 0) {
             const $chips = $('<div class="nueva-suggestions" style="margin-top:5px; display:flex; gap:5px; flex-wrap:wrap; padding: 0 10px; margin-bottom:10px;"></div>');
             suggestions.forEach(s => {
@@ -140,9 +182,8 @@ jQuery(document).ready(function ($) {
                 $chips.append($btn);
             });
             $body.append($chips);
+            scrollToBottom();
         }
-
-        scrollToBottom();
     }
 
     function scrollToBottom() {
@@ -185,7 +226,7 @@ jQuery(document).ready(function ($) {
             // Remove old session ID immediately
             localStorage.removeItem('nueva_chat_session_id');
 
-            appendMessage('bot', 'Chat ended. Transcript sent! <br> <a href="#" onclick="location.reload();">Start New Chat</a>');
+            appendMessage('bot', 'Chat ended. Transcript sent! <br> <a href="#" onclick="location.reload();">Start New Chat</a>', false, true);
 
             // Disable inputs
             $input.prop('disabled', true);
