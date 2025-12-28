@@ -39,11 +39,19 @@ class Nueva_Chatbot_API
 
     public function handle_end_chat_request()
     {
-        // No nonce check needed strictly for ending/emailing public chat if session match, but good practice
-        // validation skipped for brevity in this specific requested flow
         $session_id = sanitize_text_field($_POST['session_id']);
-        $this->send_transcript_email($session_id);
-        wp_send_json_success();
+
+        // 1. Send Transcript
+        $email_sent = $this->send_transcript_email($session_id);
+
+        // 2. Clear History (Optional, but good for privacy if requested, but let's keep it for records)
+        // For now, we just reply success.
+
+        if ($email_sent) {
+            wp_send_json_success('Chat ended. Transcript sent to admin.');
+        } else {
+            wp_send_json_success('Chat ended. Transcript could not be sent.');
+        }
     }
 
     public function handle_ajax_request()
@@ -51,10 +59,19 @@ class Nueva_Chatbot_API
         check_ajax_referer('nueva_chat_nonce', 'nonce');
 
         $message = sanitize_text_field($_POST['message']);
+        $session_id = isset($_POST['session_id']) ? sanitize_text_field($_POST['session_id']) : '';
 
-        // Log Lead/Chat if session is new (logic to be added)
+        // Save User Message
+        if ($session_id) {
+            $this->save_message($session_id, 'user', $message);
+        }
 
         $response = $this->query_gemini($message);
+
+        // Save Bot Message
+        if ($session_id) {
+            $this->save_message($session_id, 'bot', $response);
+        }
 
         wp_send_json_success(array('reply' => $response));
     }
@@ -63,8 +80,18 @@ class Nueva_Chatbot_API
     {
         $params = $request->get_json_params();
         $message = sanitize_text_field($params['message']);
+        // REST API might need session_id passed in body
+        $session_id = isset($params['session_id']) ? sanitize_text_field($params['session_id']) : '';
+
+        if ($session_id) {
+            $this->save_message($session_id, 'user', $message);
+        }
 
         $response = $this->query_gemini($message);
+
+        if ($session_id) {
+            $this->save_message($session_id, 'bot', $response);
+        }
 
         return new WP_REST_Response(array('reply' => $response), 200);
     }
@@ -146,5 +173,53 @@ class Nueva_Chatbot_API
             }
         }
         return $context;
+    }
+
+    private function save_message($session_id, $sender, $message)
+    {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'bua_chat_history';
+
+        $wpdb->insert(
+            $table_name,
+            array(
+                'session_id' => $session_id,
+                'sender' => $sender,
+                'message' => $message,
+                'timestamp' => current_time('mysql'),
+                'meta_data' => ''
+            ),
+            array('%s', '%s', '%s', '%s', '%s')
+        );
+    }
+
+    private function send_transcript_email($session_id)
+    {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'bua_chat_history';
+
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM $table_name WHERE session_id = %s ORDER BY timestamp ASC",
+            $session_id
+        ));
+
+        if (empty($results)) {
+            return false;
+        }
+
+        $chat_content = "<h3>Chat Transcript</h3><ul>";
+        foreach ($results as $row) {
+            $sender = ucfirst($row->sender);
+            $msg = nl2br(esc_html($row->message));
+            $time = $row->timestamp;
+            $chat_content .= "<li><strong>[$time] $sender:</strong> $msg</li>";
+        }
+        $chat_content .= "</ul>";
+
+        $to = get_option('admin_email'); // Default to admin email
+        $subject = "New Chat Transcript - Session $session_id";
+        $headers = array('Content-Type: text/html; charset=UTF-8');
+
+        return wp_mail($to, $subject, $chat_content, $headers);
     }
 }
