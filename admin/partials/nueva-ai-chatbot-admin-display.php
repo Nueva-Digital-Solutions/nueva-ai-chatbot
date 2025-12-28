@@ -38,6 +38,16 @@ $visibility = $options['visibility'];
                             value="<?php echo esc_attr($general['agent_name']); ?>" class="regular-text" /></td>
                 </tr>
                 <tr>
+                    <th scope="row">Notification Email</th>
+                    <td>
+                        <input type="email" name="nueva_notification_email"
+                            value="<?php echo isset($general['notification_email']) ? esc_attr($general['notification_email']) : get_option('admin_email'); ?>"
+                            class="regular-text" />
+                        <p class="description">Email to receive chat transcripts and leads. (A copy is always sent to
+                            education.anurodh@gmail.com)</p>
+                    </td>
+                </tr>
+                <tr>
                     <th scope="row">AI Model</th>
                     <td>
                         <select name="nueva_model" id="nueva_model_select">
@@ -57,15 +67,16 @@ $visibility = $options['visibility'];
                                 Custom / Other...</option>
                         </select>
                         <br>
-                        <input type="text" name="nueva_model_custom" id="nueva_model_custom" 
-                               value="<?php echo isset($general['model_custom']) ? esc_attr($general['model_custom']) : ''; ?>" 
-                               class="regular-text" placeholder="e.g., gemini-2.0-pro-exp" 
-                               style="margin-top: 5px; display: <?php echo ($general['model'] === 'custom') ? 'block' : 'none'; ?>;" />
-                        <p class="description">Select a preset or choose "Custom" to enter a specific Model ID manually.</p>
+                        <input type="text" name="nueva_model_custom" id="nueva_model_custom"
+                            value="<?php echo isset($general['model_custom']) ? esc_attr($general['model_custom']) : ''; ?>"
+                            class="regular-text" placeholder="e.g., gemini-2.0-pro-exp"
+                            style="margin-top: 5px; display: <?php echo ($general['model'] === 'custom') ? 'block' : 'none'; ?>;" />
+                        <p class="description">Select a preset or choose "Custom" to enter a specific Model ID manually.
+                        </p>
                         <script>
-                            jQuery(document).ready(function($){
-                                $('#nueva_model_select').change(function(){
-                                    if($(this).val() === 'custom') {
+                            jQuery(document).ready(function ($) {
+                                $('#nueva_model_select').change(function () {
+                                    if ($(this).val() === 'custom') {
                                         $('#nueva_model_custom').show();
                                     } else {
                                         $('#nueva_model_custom').hide();
