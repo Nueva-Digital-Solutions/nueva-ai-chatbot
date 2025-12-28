@@ -48,8 +48,6 @@ class Nueva_Chatbot_Public
             :root {
                 --nueva-primary: " . esc_attr($appearance['primary_color']) . ";
                 --nueva-secondary: " . esc_attr($appearance['secondary_color']) . ";
-                --nueva-gradient-start: " . esc_attr($appearance['primary_gradient_start']) . ";
-                --nueva-gradient-end: " . esc_attr($appearance['primary_gradient_end']) . ";
                 --nueva-font: '" . esc_attr($appearance['font_family']) . "', sans-serif;
                 --nueva-font-size: " . intval($appearance['font_size']) . "px;
             }
@@ -75,6 +73,7 @@ class Nueva_Chatbot_Public
         wp_localize_script($this->plugin_name, 'nueva_chat_vars', array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('nueva_chat_nonce'),
+            'is_logged_in' => is_user_logged_in(),
             'agent_name' => esc_js($this->options['general']['agent_name']),
             'profile_image' => esc_url($this->options['appearance']['profile_image']),
             'initial_message' => esc_js(isset($this->options['behavior']['initial_message']) && !empty($this->options['behavior']['initial_message']) ? $this->options['behavior']['initial_message'] : 'Hello! How can I help you today?')
@@ -119,6 +118,22 @@ class Nueva_Chatbot_Public
                     <div class="message bot">
                         <?php echo esc_html($initial_msg); ?>
                     </div>
+                </div>
+
+                <!-- Lead Gate Form -->
+                <div id="nueva-lead-gate"
+                    style="display:none; padding:20px; flex:1; flex-direction:column; justify-content:center; background:#f9f9f9;">
+                    <h4 style="margin-top:0; text-align:center;">Start Chatting</h4>
+                    <p style="font-size:13px; text-align:center; color:#666; margin-bottom:15px;">Please provide your details to
+                        connect.</p>
+                    <input type="text" id="nueva-lead-name" placeholder="Your Name"
+                        style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:4px;">
+                    <input type="email" id="nueva-lead-email" placeholder="Email Address"
+                        style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:4px;">
+                    <input type="tel" id="nueva-lead-phone" placeholder="Phone Number"
+                        style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ddd; border-radius:4px;">
+                    <button id="nueva-lead-submit" class="nueva-btn-primary" style="width:100%; padding:10px;">Start
+                        Chat</button>
                 </div>
                 <div class="nueva-chat-footer">
                     <div class="nueva-footer-controls">

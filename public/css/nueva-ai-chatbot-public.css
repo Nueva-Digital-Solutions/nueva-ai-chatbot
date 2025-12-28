@@ -11,7 +11,7 @@
 .nueva-chat-button {
     width: 60px;
     height: 60px;
-    background: linear-gradient(135deg, var(--nueva-primary, #0073aa), #005a87);
+    background: var(--nueva-primary, #0073aa);
     border-radius: 50%;
     color: var(--nueva-secondary, #ffffff);
     display: flex;
@@ -76,9 +76,6 @@
 
 .nueva-chat-header {
     background: var(--nueva-primary, #0073aa);
-    /* Fallback 1 */
-    background: linear-gradient(135deg, var(--nueva-gradient-start, #0073aa), var(--nueva-gradient-end, #005a87));
-    /* Standard */
     color: var(--nueva-secondary, #fff);
     padding: 20px;
     display: flex;

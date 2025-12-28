@@ -18,13 +18,62 @@ jQuery(document).ready(function ($) {
         if (isOpen) {
             $window.css('display', 'flex').hide().fadeIn('fast', function () {
                 $(this).css('display', 'flex');
+                checkLeadGate();
             });
             $widget.removeClass('closed').addClass('open');
-            scrollToBottom();
+            // Check gate on open
         } else {
             $window.fadeOut('fast');
             $widget.removeClass('open').addClass('closed');
         }
+    });
+
+    function checkLeadGate() {
+        var isGuest = !nueva_chat_vars.is_logged_in;
+        var hasLead = localStorage.getItem('nueva_lead_captured');
+
+        if (isGuest && !hasLead) {
+            $('#nueva-chat-body').hide();
+            $('.nueva-chat-footer').hide();
+            $('#nueva-lead-gate').css('display', 'flex');
+        } else {
+            $('#nueva-lead-gate').hide();
+            $('#nueva-chat-body').show();
+            $('.nueva-chat-footer').css('display', 'flex');
+            scrollToBottom();
+        }
+    }
+
+    $('#nueva-lead-submit').click(function () {
+        var name = $('#nueva-lead-name').val();
+        var email = $('#nueva-lead-email').val();
+        var phone = $('#nueva-lead-phone').val();
+
+        if (!email && !phone) {
+            alert("Please provide at least an Email or Phone number.");
+            return;
+        }
+
+        // Send backend hidden message to capture lead
+        // The backend regex looks for email/phone in ANY message.
+        var hiddenMsg = "LEAD_CAPTURE: My name is " + name + ". Email: " + email + ". Phone: " + phone;
+
+        // We do NOT append this to UI, just send it.
+        $.post(nueva_chat_vars.ajax_url, {
+            action: 'nueva_chat_message',
+            message: hiddenMsg,
+            session_id: session_id,
+            nonce: nueva_chat_vars.nonce
+        });
+
+        // Set LocalStorage
+        localStorage.setItem('nueva_lead_captured', 'true');
+
+        // Restore UI
+        $('#nueva-lead-gate').hide();
+        $('#nueva-chat-body').fadeIn();
+        $('.nueva-chat-footer').fadeIn().css('display', 'flex');
+        scrollToBottom();
     });
 
     // Send Message Logic

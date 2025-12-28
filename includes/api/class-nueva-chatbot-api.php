@@ -131,14 +131,18 @@ class Nueva_Chatbot_API
         // 2. Dynamic Context (User Data / WooCommerce)
         $user_context = $this->get_dynamic_context();
 
-        $full_context = $kb_context . "\n" . $user_context;
+        // 3. Conversation History (Memory)
+        $history_context = $this->get_conversation_history($session_id);
+
+        $full_context = $kb_context . "\n" . $user_context . "\n" . $history_context;
 
         // 3. Construct Prompt with Persona & Strictness
         $system_prompt = "You are $agent_name. Your tone is $tone. 
 You are an AI support agent for this specific website. 
-STRICT INSTRUCTION: Answer the user's question using ONLY the context provided below. 
-If the answer is not in the context, politely say 'I cannot find that information in my knowledge base' or offer to connect them with human support. 
-Do NOT make up information or use general knowledge outside of what is provided.
+STRICT INSTRUCTION: Answer the user's question using ONLY the context provided below.
+IMPORTANT: Never mention the words 'context', 'knowledge base', 'internal data', or 'provided text'. Answer naturally as if you simply know the information.
+If the answer is not in the context, politely deny knowing it (e.g., 'I don't have that information directly...') or offer to connect with human support.
+Do NOT make up information.
 
 CUSTOM INSTRUCTIONS: $instructions
 
@@ -188,7 +192,33 @@ $full_context";
         return "I didn't understand that. Could you rephrase?";
     }
 
-    // Helper: Detect Handoff Intent (Simple Keyword for now, could use AI classifier)
+    private function get_conversation_history($session_id)
+    {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'bua_chat_history';
+
+        // Get last 6 messages (approx 3 turns)
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT sender, message FROM $table_name WHERE session_id = %s ORDER BY timestamp DESC LIMIT 6",
+            $session_id
+        ));
+
+        if (!$results)
+            return "";
+
+        $history = "--- Conversation History ---\n";
+        // Results are DESC, so reverse them to chronological order
+        $results = array_reverse($results);
+        foreach ($results as $row) {
+            $role = ($row->sender === 'user') ? 'User' : 'Agent';
+            $history .= "$role: " . mb_substr($row->message, 0, 200) . "\n"; // Truncate long msgs
+        }
+        $history .= "--- End History ---\n";
+
+        return $history;
+    }
+
+    // Helper: Detect Handoff Intent
     private function check_handoff_request($message)
     {
         $keywords = ['human', 'agent', 'support', 'person', 'talk to someone', 'real person'];
@@ -210,12 +240,9 @@ $full_context";
 
     private function add_admin_notification($session_id, $message)
     {
-        // Store in transient or option queue for Admin Polling
         $notifications = get_option('nueva_admin_notifications', []);
         if (!is_array($notifications))
             $notifications = [];
-
-        // Add new
         $notifications[] = [
             'type' => 'handoff',
             'session_id' => $session_id,
@@ -223,12 +250,8 @@ $full_context";
             'time' => time(),
             'read' => false
         ];
-
-        // Keep only last 20
-        if (count($notifications) > 20) {
+        if (count($notifications) > 20)
             array_shift($notifications);
-        }
-
         update_option('nueva_admin_notifications', $notifications);
     }
 
@@ -236,47 +259,25 @@ $full_context";
     {
         global $wpdb;
         $table_name = $wpdb->prefix . 'bua_leads';
-
-        // Simple Regex for Email
         preg_match('/[a-z0-9_\-\+\.]+@[a-z0-9\-]+\.([a-z]{2,4})(?:\.[a-z]{2})?/i', $message, $email_matches);
-        // Simple Regex for Phone (10+ digits)
         preg_match('/\b\d{10,15}\b/', $message, $phone_matches);
 
         $data = [];
-        if (!empty($email_matches[0])) {
+        if (!empty($email_matches[0]))
             $data['email'] = $email_matches[0];
-        }
-        if (!empty($phone_matches[0])) {
+        if (!empty($phone_matches[0]))
             $data['phone'] = $phone_matches[0];
-        }
 
         if (!empty($data)) {
-            // Check if session already has this lead data
             $existing = $wpdb->get_row($wpdb->prepare("SELECT user_data FROM $table_name WHERE chat_session_id = %s", $session_id));
-
             if ($existing) {
-                // Merge data
                 $existing_data = json_decode($existing->user_data, true);
                 if (!is_array($existing_data))
                     $existing_data = [];
                 $new_data = array_merge($existing_data, $data);
-
-                $wpdb->update(
-                    $table_name,
-                    array('user_data' => json_encode($new_data)),
-                    array('chat_session_id' => $session_id)
-                );
+                $wpdb->update($table_name, array('user_data' => json_encode($new_data)), array('chat_session_id' => $session_id));
             } else {
-                // Insert new
-                $wpdb->insert(
-                    $table_name,
-                    array(
-                        'chat_session_id' => $session_id,
-                        'user_data' => json_encode($data),
-                        'collected_at' => current_time('mysql'),
-                        'is_synced' => 0
-                    )
-                );
+                $wpdb->insert($table_name, array('chat_session_id' => $session_id, 'user_data' => json_encode($data), 'collected_at' => current_time('mysql'), 'is_synced' => 0));
             }
         }
     }
@@ -284,29 +285,16 @@ $full_context";
     private function get_dynamic_context()
     {
         $context = "";
-
-        // 1. Current User Info
         if (is_user_logged_in()) {
             $user = wp_get_current_user();
             $context .= "Current User Name: " . $user->display_name . "\n";
             $context .= "Current User Email: " . $user->user_email . "\n";
-
-            // 2. WooCommerce Orders (if active)
             if (class_exists('WooCommerce')) {
-                // Get last 3 orders
-                $orders = wc_get_orders(array(
-                    'customer' => $user->ID,
-                    'limit' => 3,
-                    'orderby' => 'date',
-                    'order' => 'DESC',
-                    'return' => 'objects',
-                ));
-
+                $orders = wc_get_orders(array('customer' => $user->ID, 'limit' => 3, 'orderby' => 'date', 'order' => 'DESC', 'return' => 'objects'));
                 if ($orders) {
                     $context .= "User's Recent Orders:\n";
                     foreach ($orders as $order) {
                         $context .= "- Order #" . $order->get_id() . " (" . $order->get_status() . "): " . wc_price($order->get_total()) . " - Date: " . $order->get_date_created()->format('Y-m-d') . "\n";
-                        // Items
                         foreach ($order->get_items() as $item_id => $item) {
                             $context .= "  * " . $item->get_name() . " x " . $item->get_quantity() . "\n";
                         }
@@ -318,7 +306,6 @@ $full_context";
         } else {
             $context .= "User is not logged in (Guest).\n";
         }
-
         return $context;
     }
 
@@ -326,15 +313,8 @@ $full_context";
     {
         global $wpdb;
         $table_name = $wpdb->prefix . 'bua_knowledge_base';
-
-        // Simple search for now (LIKE query)
-        // In a real vector DB we'd do semantic search
         $wild = '%' . $wpdb->esc_like($query) . '%';
-        $results = $wpdb->get_results($wpdb->prepare(
-            "SELECT content FROM $table_name WHERE content LIKE %s LIMIT 3",
-            $wild
-        ));
-
+        $results = $wpdb->get_results($wpdb->prepare("SELECT content FROM $table_name WHERE content LIKE %s LIMIT 3", $wild));
         $context = "";
         if ($results) {
             foreach ($results as $row) {
@@ -347,15 +327,13 @@ $full_context";
     private function get_client_ip()
     {
         $ip = 'Unknown';
-        if (isset($_SERVER['HTTP_CLIENT_IP']) && !empty($_SERVER['HTTP_CLIENT_IP'])) {
+        if (isset($_SERVER['HTTP_CLIENT_IP']) && !empty($_SERVER['HTTP_CLIENT_IP']))
             $ip = $_SERVER['HTTP_CLIENT_IP'];
-        } elseif (isset($_SERVER['HTTP_X_FORWARDED_FOR']) && !empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            // Can be multiple IPs, first is original
+        elseif (isset($_SERVER['HTTP_X_FORWARDED_FOR']) && !empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
             $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
             $ip = trim($ips[0]);
-        } elseif (isset($_SERVER['REMOTE_ADDR']) && !empty($_SERVER['REMOTE_ADDR'])) {
+        } elseif (isset($_SERVER['REMOTE_ADDR']) && !empty($_SERVER['REMOTE_ADDR']))
             $ip = $_SERVER['REMOTE_ADDR'];
-        }
         return sanitize_text_field($ip);
     }
 
@@ -363,41 +341,37 @@ $full_context";
     {
         global $wpdb;
         $table_name = $wpdb->prefix . 'bua_chat_history';
-
         $meta_data = array();
-        if ($sender === 'user') {
+        if ($sender === 'user')
             $meta_data['ip'] = $this->get_client_ip();
-        }
-
-        $wpdb->insert(
-            $table_name,
-            array(
-                'session_id' => $session_id,
-                'sender' => $sender,
-                'message' => $message,
-                'timestamp' => current_time('mysql'),
-                'meta_data' => !empty($meta_data) ? json_encode($meta_data) : ''
-            ),
-            array('%s', '%s', '%s', '%s', '%s')
-        );
+        $wpdb->insert($table_name, array('session_id' => $session_id, 'sender' => $sender, 'message' => $message, 'timestamp' => current_time('mysql'), 'meta_data' => !empty($meta_data) ? json_encode($meta_data) : ''), array('%s', '%s', '%s', '%s', '%s'));
     }
 
     private function send_transcript_email($session_id)
     {
         global $wpdb;
         $table_name = $wpdb->prefix . 'bua_chat_history';
+        $results = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_name WHERE session_id = %s ORDER BY timestamp ASC", $session_id));
 
-        $results = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM $table_name WHERE session_id = %s ORDER BY timestamp ASC",
-            $session_id
-        ));
-
-        if (empty($results)) {
+        if (empty($results))
             return false;
-        }
 
         $chat_content = "<h3>Chat Transcript</h3>";
-        $chat_content .= "<p><strong>Session ID:</strong> $session_id</p><ul>";
+
+        // Add User Info if Logged In or Lead Captured
+        $user_info = "Guest";
+        if (is_user_logged_in()) {
+            $u = wp_get_current_user();
+            $user_info = "User ID: {$u->ID} ({$u->user_login}) - {$u->user_email}";
+        }
+        $leads_table = $wpdb->prefix . 'bua_leads';
+        $lead = $wpdb->get_row($wpdb->prepare("SELECT user_data FROM $leads_table WHERE chat_session_id = %s", $session_id));
+        if ($lead) {
+            $user_info .= "<br>Lead Data: " . esc_html($lead->user_data);
+        }
+
+        $chat_content .= "<p><strong>Session ID:</strong> $session_id</p>";
+        $chat_content .= "<p><strong>User:</strong> $user_info</p><hr><ul>";
 
         foreach ($results as $row) {
             $sender = ucfirst($row->sender);
@@ -407,23 +381,12 @@ $full_context";
         }
         $chat_content .= "</ul>";
 
-        // Collect Leads for this session to highlight
-        $leads_table = $wpdb->prefix . 'bua_leads';
-        $lead = $wpdb->get_row($wpdb->prepare("SELECT user_data FROM $leads_table WHERE chat_session_id = %s", $session_id));
-        if ($lead) {
-            $chat_content .= "<hr><p><strong>LEAD CAPTURED:</strong> " . esc_html($lead->user_data) . "</p><hr>";
-        }
-
         $to = get_option('admin_email');
         $site_name = get_bloginfo('name');
         $subject = "[$site_name] Chat Transcript - Session $session_id";
 
-        // Simplified headers for better deliverability
-        // We let WordPress handle the 'From' address (usually wordpress@domain.com)
-        // to avoid SPF/DKIM rejections.
         $headers = array('Content-Type: text/html; charset=UTF-8');
-
-        $sent = wp_mail($to, $subject, $chat_content, $headers); // Return value is bool
+        $sent = wp_mail($to, $subject, $chat_content, $headers);
 
         if (!$sent) {
             error_log("Nueva Chatbot: Failed to send transcript email for session $session_id to $to");
