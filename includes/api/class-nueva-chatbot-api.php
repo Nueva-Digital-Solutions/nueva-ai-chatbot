@@ -128,13 +128,16 @@ class Nueva_Chatbot_API
         // 1. Context Retrieval (KB)
         $kb_context = $this->get_kb_context($user_message);
 
+        // 1b. Business Profile Context
+        $biz_context = $this->get_business_profile_context();
+
         // 2. Dynamic Context (User Data / WooCommerce)
         $user_context = $this->get_dynamic_context();
 
         // 3. Conversation History (Memory)
         $history_context = $this->get_conversation_history($session_id);
 
-        $full_context = $kb_context . "\n" . $user_context . "\n" . $history_context;
+        $full_context = $biz_context . "\n" . $kb_context . "\n" . $user_context . "\n" . $history_context;
 
         // 3. Construct Prompt with Persona & Strictness
         $system_prompt = "You are $agent_name. Your tone is $tone. 
@@ -315,17 +318,59 @@ $full_context";
         return $context;
     }
 
+    private function get_business_profile_context()
+    {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'bua_business_profile';
+        $results = $wpdb->get_results("SELECT meta_key, meta_value FROM $table_name");
+
+        if (!$results)
+            return "";
+
+        $biz_info = "--- Business/Site Information ---\n";
+        foreach ($results as $row) {
+            $key = ucwords(str_replace('_', ' ', $row->meta_key));
+            $biz_info .= "$key: " . $row->meta_value . "\n";
+        }
+        $biz_info .= "--- End Business Info ---\n";
+        return $biz_info;
+    }
+
     private function get_kb_context($query)
     {
         global $wpdb;
         $table_name = $wpdb->prefix . 'bua_knowledge_base';
-        $wild = '%' . $wpdb->esc_like($query) . '%';
-        $results = $wpdb->get_results($wpdb->prepare("SELECT content FROM $table_name WHERE content LIKE %s LIMIT 3", $wild));
+
+        // 1. Tokenize query
+        $clean_query = preg_replace('/[^\p{L}\p{N}\s]/u', '', strtolower($query));
+        $stop_words = ['the', 'is', 'in', 'at', 'of', 'on', 'and', 'a', 'to', 'it', 'for', 'or', 'an', 'as', 'by', 'with', 'from', 'that', 'which', 'who', 'what', 'where', 'when', 'why', 'how', 'can', 'could', 'would', 'should', 'do', 'does', 'did'];
+        $words = explode(' ', $clean_query);
+        $keywords = array_diff($words, $stop_words);
+        $keywords = array_filter($keywords);
+
+        if (empty($keywords))
+            return "";
+
+        // 2. Build Scoring Query
+        $likes = [];
+        $params = [];
+        foreach ($keywords as $word) {
+            $likes[] = "(content LIKE %s)";
+            $params[] = '%' . $wpdb->esc_like($word) . '%';
+        }
+        $score_formula = implode(' + ', $likes);
+
+        $sql = "SELECT content, ($score_formula) as relevance FROM $table_name HAVING relevance > 0 ORDER BY relevance DESC LIMIT 4";
+        $prepared_sql = $wpdb->prepare($sql, $params);
+        $results = $wpdb->get_results($prepared_sql);
+
         $context = "";
         if ($results) {
+            $context .= "--- Knowledge Base Search Results ---\n";
             foreach ($results as $row) {
-                $context .= $row->content . "\n---\n";
+                $context .= trim($row->content) . "\n\n";
             }
+            $context .= "--- End KB Results ---\n";
         }
         return $context;
     }
