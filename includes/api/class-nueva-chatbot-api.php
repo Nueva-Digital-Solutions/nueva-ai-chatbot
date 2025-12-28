@@ -536,4 +536,68 @@ class Nueva_Chatbot_API
 
         return $sent;
     }
+    // --- FLOW GENERATION ---
+    public function generate_flow_from_prompt($user_prompt)
+    {
+        $schema = '{
+            "start": "step_id",
+            "nodes": {
+                "step_id": {
+                    "message": "Bot Message",
+                    "options": [
+                        { "label": "Btn Label", "next": "next_step_id", "action": "step|link|phone", "value": "url or phone (optional)" }
+                    ]
+                }
+            }
+        }';
+
+        $system_prompt = "You are an AI Chat Flow Architect. 
+        Create a logic flow JSON based on: '$user_prompt'.
+        
+        Output MUST be valid JSON following this exact structure:
+        $schema
+        
+        Rules:
+        1. Use unique IDs for keys (e.g. step_01, step_02).
+        2. 'start' must point to the first node.
+        3. 'action' can be 'step' (default), 'link' (open url), or 'phone' (call).
+        4. If action is link/phone, put valid URL/Number in 'value'.
+        5. Return ONLY the JSON string. No markdown formatting.";
+
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->api_key}";
+
+        $body = [
+            'contents' => [
+                [
+                    'parts' => [
+                        ['text' => $system_prompt]
+                    ]
+                ]
+            ]
+        ];
+
+        $args = array(
+            'body' => json_encode($body),
+            'headers' => array('Content-Type' => 'application/json'),
+            'timeout' => 45,
+            'method' => 'POST'
+        );
+
+        $response = wp_remote_post($url, $args);
+
+        if (is_wp_error($response))
+            return false;
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+            $raw = $data['candidates'][0]['content']['parts'][0]['text'];
+            // Clean markdown blocks if present
+            $raw = preg_replace('/^```json\s*|\s*```$/', '', $raw);
+            $json = json_decode($raw, true);
+            return $json;
+        }
+        return false;
+    }
 }
