@@ -214,6 +214,16 @@ $visibility = $options['visibility'];
                     </td>
                 </tr>
                 <tr>
+                    <th scope="row">Guest Order Status</th>
+                    <td>
+                        <select name="nueva_guest_orders">
+                            <option value="yes" <?php selected(isset($behavior['guest_orders']) ? $behavior['guest_orders'] : 'yes', 'yes'); ?>>✅ Enabled (Allow Order ID + Email lookup)</option>
+                            <option value="no" <?php selected(isset($behavior['guest_orders']) ? $behavior['guest_orders'] : '', 'no'); ?>>❌ Disabled</option>
+                        </select>
+                        <p class="description">Allows guest users to check order status by providing Order ID and Email in chat.</p>
+                    </td>
+                </tr>
+                <tr>
                     <th scope="row">AI Strictness</th>
                     <td>
                         <select name="nueva_kb_strictness">

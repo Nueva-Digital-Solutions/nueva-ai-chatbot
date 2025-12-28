@@ -3,9 +3,9 @@
  * Plugin Name:       Nueva AI Chatbot
  * Plugin URI:        https://github.com/Nueva-Digital-Solutions/nueva-ai-chatbot
  * Description:       An advanced AI chatbot plugin powered by Gemini. Features knowledge base management, flow builder, lead generation, and custom branding.
- * Version:           1.0.0
- * Author:            Nueva Digital Solutions
- * Author URI:        https://nuevadigital.co.in
+ * Version:           1.2.0
+ * Author:            Nueva Digital
+ * Author URI:        https://nuevadigital.com
  * License:           GPL-2.0+
  * Text Domain:       nueva-ai-chatbot
  * Domain Path:       /languages
@@ -19,7 +19,7 @@ if (!defined('WPINC')) {
 /**
  * Current plugin version.
  */
-define('NUEVA_AI_CHATBOT_VERSION', '1.0.0');
+define('NUEVA_AI_CHATBOT_VERSION', '1.2.0');
 
 /**
  * The code that runs during plugin activation.

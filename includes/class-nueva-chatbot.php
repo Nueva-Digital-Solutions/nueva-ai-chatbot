@@ -9,13 +9,14 @@ class Nueva_Chatbot
     protected $loader;
     protected $plugin_name;
     protected $version;
+    protected $api; // Fix undefined property
 
     public function __construct()
     {
         if (defined('NUEVA_AI_CHATBOT_VERSION')) {
             $this->version = NUEVA_AI_CHATBOT_VERSION;
         } else {
-            $this->version = '1.0.0';
+            $this->version = '1.2.0';
         }
         $this->plugin_name = 'nueva-ai-chatbot';
 

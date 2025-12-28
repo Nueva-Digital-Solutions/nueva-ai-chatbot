@@ -329,6 +329,10 @@ class Nueva_Chatbot_API
     {
         $context = "";
 
+        // Check Guest Order Lookup
+        $options = get_option('nueva_chat_options');
+        $guest_orders_enabled = isset($options['behavior']['guest_orders']) ? $options['behavior']['guest_orders'] : 'yes';
+
         if (is_user_logged_in()) {
             $user = wp_get_current_user();
             $context .= "User Status: LOGGED IN\n";
@@ -353,6 +357,50 @@ class Nueva_Chatbot_API
             }
         } else {
             $context .= "User Status: GUEST (Not Logged In)\n";
+
+            // Guest Order Lookup Logic
+            if ($guest_orders_enabled === 'yes' && class_exists('WooCommerce')) {
+                // Scan history for email + order ID
+                global $wpdb;
+                $table_name = $wpdb->prefix . 'bua_chat_history';
+                // Fetch last 10 messages to ensure we catch the inputs
+                $history = $wpdb->get_results($wpdb->prepare("SELECT message FROM $table_name ORDER BY timestamp DESC LIMIT 10"));
+
+                $found_email = '';
+                $found_order_id = '';
+
+                foreach ($history as $row) {
+                    $msg = $row->message;
+                    // Regex for Email
+                    if (empty($found_email) && preg_match('/[a-z0-9_\-\+\.]+@[a-z0-9\-]+\.([a-z]{2,4})(?:\.[a-z]{2})?/i', $msg, $matches)) {
+                        $found_email = $matches[0];
+                    }
+                    // Regex for Order ID (simple digits, maybe preceded by #)
+                    if (empty($found_order_id) && preg_match('/(?:^|\s|#)(\d{4,8})(?:\s|$)/', $msg, $matches)) {
+                        $found_order_id = $matches[1];
+                    }
+                }
+
+                if (!empty($found_email) && !empty($found_order_id)) {
+                    // Query WooCommerce
+                    $orders = wc_get_orders(array(
+                        'email' => $found_email,
+                        'post__in' => array($found_order_id),
+                        'return' => 'objects'
+                    ));
+
+                    if (!empty($orders)) {
+                        $order = $orders[0];
+                        $context .= "[SYSTEM] Verified Guest Order Found:\n";
+                        $context .= "- Order #{$found_order_id} linked to {$found_email}\n";
+                        $context .= "- Status: " . $order->get_status() . "\n";
+                        $context .= "- Total: " . wc_price($order->get_total()) . "\n";
+                        $context .= "- Date: " . $order->get_date_created()->format('Y-m-d') . "\n";
+                    } else {
+                        // $context .= "[SYSTEM] Guest Order Lookup Failed: Order #{$found_order_id} not found for email {$found_email}.\n";
+                    }
+                }
+            }
         }
 
         return $context;
