@@ -59,9 +59,9 @@ jQuery(document).ready(function ($) {
         }, function (response) {
             $('#' + loadingId).remove();
             if (response.success) {
-                // Parse markdown if possible (simple replacement for now)
-                var reply = escapeHtml(response.data.reply).replace(/\n/g, '<br>');
-                $body.append('<div class="message bot">' + reply + '</div>');
+                // Parse markdown
+                var replyHtml = parseMarkdown(response.data.reply);
+                $body.append('<div class="message bot">' + replyHtml + '</div>');
             } else {
                 $body.append('<div class="message bot error">Something went wrong.</div>');
             }
@@ -71,6 +71,25 @@ jQuery(document).ready(function ($) {
             $body.append('<div class="message bot error">Connection failed.</div>');
             scrollToBottom();
         });
+    }
+
+    // Simple Markdown Parser
+    function parseMarkdown(text) {
+        if (!text) return '';
+        var html = text
+            // Escape HTML (security)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            // Bold (**text**)
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            // Italic (*text*)
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            // Links [text](url) - ensure target=_blank
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--nueva-primary); text-decoration:underline;">$1</a>')
+            // Newlines
+            .replace(/\n/g, '<br>');
+        return html;
     }
 
     function scrollToBottom() {

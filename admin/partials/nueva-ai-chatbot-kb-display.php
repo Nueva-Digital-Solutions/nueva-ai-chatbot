@@ -110,9 +110,16 @@ if (isset($_POST['nueva_kb_action']) && check_admin_referer('nueva_kb_verify')) 
                 $clean_text = preg_replace('/\s+/', ' ', $clean_text);
 
                 // For Products, maybe add Price/Title explicitly
-                if (get_post_type() == 'product') {
-                    global $product;
-                    $clean_text = "Product: " . get_the_title() . ". Price: " . $product->get_price() . ". Description: " . $clean_text;
+                // Enhance Product Data
+                if (get_post_type() == 'product' && function_exists('wc_get_product')) {
+                    $product = wc_get_product(get_the_ID());
+                    if ($product) {
+                        $price = $product->get_price();
+                        $sku = $product->get_sku();
+                        $stock = $product->is_in_stock() ? 'In Stock' : 'Out of Stock';
+                        $cats = wc_get_product_category_list($product->get_id());
+                        $clean_text = "Product: " . get_the_title() . "\nPrice: " . $price . "\nSKU: " . $sku . "\nAvailability: " . $stock . "\nCategories: " . strip_tags($cats) . "\nDescription: " . $clean_text;
+                    }
                 }
 
                 if (!empty($clean_text)) {

@@ -172,9 +172,9 @@ $visibility = $options['visibility'];
                 <tr>
                     <th scope="row">Custom Agent Instructions</th>
                     <td>
-                        <textarea name="nueva_agent_instructions" class="large-text" rows="12"
+                        <textarea name="nueva_agent_instructions" class="large-text" rows="14"
                             placeholder="Enter instructions..."><?php
-                            $default_instructions = "You are a helpful AI assistant.\n\n[RULE: LEAD GENERATION]\nIF User Status is GUEST:\n1. First, politely ask for their NAME.\n2. Once they provide it, ask for their EMAIL.\n3. Finally, ask for their PHONE NUMBER.\nDo not answer their main questions until you have at least a Name and Email. Collect these details one by one conversationally.\n\nIF User Status is LOGGED IN:\nDo not ask for contact details. The system has already identified them. Proceed to answer their questions immediately.\n\n[RULE: KNOWLEDGE BASE]\nAnswer using the provided Context. Do NOT mention 'Knowledge Base' or 'Context' to the user. Answer naturally.";
+                            $default_instructions = "You are a helpful AI assistant.\n\n[RULE: LEAD GENERATION]\nIF User Status is GUEST:\n1. First, politely ask for their NAME.\n2. Once they provide it, ask for their EMAIL.\n3. Finally, ask for their PHONE NUMBER.\nDo this ONE BY ONE before answering complex queries.\n\nIF User Status is LOGGED IN:\nDo not ask for contact details and Proceed to answer their questions immediately.\n\n[RULE: KNOWLEDGE BASE]\nAlways prioritize the provided Context (Products, Policies, etc) over general knowledge.\nIf asked about products, use the 'Product: ...' details in context (Price, Stock) to answer accurately.\nIf the answer is NOT in the context, politely say you don't know or offer to connect with a human.\n\n[RULE: TONE]\nBe helpful, concise, and professional.";
                             echo isset($behavior['agent_instructions']) && !empty($behavior['agent_instructions']) ? esc_textarea($behavior['agent_instructions']) : $default_instructions;
                             ?></textarea>
                         <p class="description">Specific instructions for the AI's behavior. You can edit the Lead
