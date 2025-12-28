@@ -245,6 +245,7 @@ class Nueva_Chatbot_Admin
                 'api_key' => sanitize_text_field($_POST['nueva_api_key']),
                 'agent_name' => sanitize_text_field($_POST['nueva_agent_name']),
                 'notification_email' => sanitize_email($_POST['nueva_notification_email']),
+                'industry' => sanitize_text_field($_POST['nueva_industry']), // Added Industry
                 'model' => sanitize_text_field($_POST['nueva_model']),
                 'model_custom' => sanitize_text_field($_POST['nueva_model_custom']),
             ),

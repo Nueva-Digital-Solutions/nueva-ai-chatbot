@@ -47,6 +47,21 @@ $visibility = $options['visibility'];
                     </td>
                 </tr>
                 <tr>
+                    <th scope="row">Business Industry</th>
+                    <td>
+                        <select name="nueva_industry">
+                            <option value="ecommerce" <?php selected(isset($general['industry']) ? $general['industry'] : '', 'ecommerce'); ?>>E-commerce / Retail</option>
+                            <option value="saas" <?php selected(isset($general['industry']) ? $general['industry'] : '', 'saas'); ?>>SaaS / Technology</option>
+                            <option value="service" <?php selected(isset($general['industry']) ? $general['industry'] : '', 'service'); ?>>Service Business (Agency, Consulting)</option>
+                            <option value="health" <?php selected(isset($general['industry']) ? $general['industry'] : '', 'health'); ?>>Healthcare / Medical</option>
+                            <option value="education" <?php selected(isset($general['industry']) ? $general['industry'] : '', 'education'); ?>>Education / School</option>
+                            <option value="blog" <?php selected(isset($general['industry']) ? $general['industry'] : '', 'blog'); ?>>Blog / News / Media</option>
+                            <option value="other" <?php selected(isset($general['industry']) ? $general['industry'] : '', 'other'); ?>>Other</option>
+                        </select>
+                        <p class="description">Helps the AI understand your context better.</p>
+                    </td>
+                </tr>
+                <tr>
                     <th scope="row">AI Model</th>
                     <td>
                         <select name="nueva_model" id="nueva_model_select">

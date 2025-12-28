@@ -113,6 +113,9 @@ class Nueva_Chatbot_API
             wp_send_json_error('Invalid feedback data.');
         }
 
+        // Trigger Async Categorization (Sync for now to ensure it runs)
+        $category = $this->categorize_conversation($session_id);
+
         global $wpdb;
         $table_name = $wpdb->prefix . 'bua_chat_feedback';
 
@@ -122,12 +125,81 @@ class Nueva_Chatbot_API
                 'session_id' => $session_id,
                 'rating' => $rating,
                 'reason' => $reason,
+                'category' => $category,
                 'created_at' => current_time('mysql')
             ),
-            array('%s', '%d', '%s', '%s')
+            array('%s', '%d', '%s', '%s', '%s')
         );
 
         wp_send_json_success('Feedback saved.');
+    }
+
+    // New Helper: Categorize Conversation
+    private function categorize_conversation($session_id)
+    {
+        // 1. Get Transcript
+        $messages = $this->get_full_transcript($session_id);
+        if (empty($messages))
+            return 'Unknown';
+
+        // 2. Prepare Prompt
+        $system_prompt = "Analyze the following chat transcript between a User and an AI Agent.
+        Classify the USER'S primary intent into exactly ONE of these categories:
+        - Sales (Asking about products, pricing, buying)
+        - Support (Asking for help, status, how-to)
+        - Technical (Bugs, errors, integration issues)
+        - General (Greeting, small talk, unknown)
+        - Complaint (Unhappy, negative feedback)
+        
+        Return ONLY the category name (e.g., 'Sales'). Do not add any punctuation or explanation.";
+
+        // 3. Call Gemini
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->api_key}";
+
+        $body = [
+            'contents' => [
+                [
+                    'parts' => [
+                        ['text' => $system_prompt . "\n\nTRANSCRIPT:\n" . $messages]
+                    ]
+                ]
+            ]
+        ];
+
+        $response = wp_remote_post($url, array(
+            'body' => json_encode($body),
+            'headers' => array('Content-Type' => 'application/json'),
+            'timeout' => 15
+        ));
+
+        if (is_wp_error($response))
+            return 'Unknown';
+
+        $data = json_decode(wp_remote_retrieve_body($response), true);
+
+        if (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+            $cat = trim($data['candidates'][0]['content']['parts'][0]['text']);
+            // Normalize
+            $allowed = ['Sales', 'Support', 'Technical', 'General', 'Complaint'];
+            foreach ($allowed as $valid) {
+                if (stripos($cat, $valid) !== false)
+                    return $valid;
+            }
+        }
+        return 'General';
+    }
+
+    private function get_full_transcript($session_id)
+    {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'bua_chat_history';
+        $results = $wpdb->get_results($wpdb->prepare("SELECT sender, message FROM $table_name WHERE session_id = %s ORDER BY timestamp ASC", $session_id));
+        $text = "";
+        foreach ($results as $row) {
+            $role = ($row->sender === 'user') ? 'User' : 'Agent';
+            $text .= "$role: " . mb_substr($row->message, 0, 500) . "\n";
+        }
+        return $text;
     }
 
     public function handle_ajax_request()
