@@ -4,11 +4,26 @@ if (isset($_POST['nueva_kb_action']) && check_admin_referer('nueva_kb_verify')) 
     global $wpdb;
     $table_name = $wpdb->prefix . 'bua_knowledge_base';
 
+    // Delete Item
+    if (isset($_POST['nueva_kb_action']) && $_POST['nueva_kb_action'] == 'delete_item') {
+        $id = intval($_POST['item_id']);
+        $wpdb->delete($table_name, ['id' => $id]);
+        echo '<div class="notice notice-success"><p>Item deleted successfully.</p></div>';
+    }
+
+    // Update Item
+    if (isset($_POST['nueva_kb_action']) && $_POST['nueva_kb_action'] == 'edit_item') {
+        $id = intval($_POST['edit_item_id']);
+        $content = wp_kses_post($_POST['edit_content']);
+        $wpdb->update($table_name, ['content' => $content], ['id' => $id]);
+        echo '<div class="notice notice-success"><p>Item updated successfully.</p></div>';
+    }
+
     // Add URL
     if ($_POST['nueva_kb_action'] == 'add_url') {
         $url = esc_url_raw($_POST['kb_url']);
         // Placeholder text extraction
-        $content = "Content scraped from $url (Placeholder)";
+        $content = "Content scraped from $url (Placeholder - Real scraping requires external libs)";
         $wpdb->insert($table_name, [
             'type' => 'url',
             'source_ref' => $url,
@@ -35,7 +50,6 @@ if (isset($_POST['nueva_kb_action']) && check_admin_referer('nueva_kb_verify')) 
             'type' => 'structured_manual',
             'source_ref' => 'Manual Entry ' . date('Y-m-d H:i'),
             'content' => json_encode($data), // Searchable content handling needed later
-            'raw_data' => json_encode($data),
             'created_at' => current_time('mysql')
         ]);
         echo '<div class="notice notice-success"><p>Manual entry added.</p></div>';
@@ -50,13 +64,15 @@ if (isset($_POST['nueva_kb_action']) && check_admin_referer('nueva_kb_verify')) 
             while ($query->have_posts()) {
                 $query->the_post();
                 $content = strip_tags(get_the_content());
-                $wpdb->insert($table_name, [
-                    'type' => 'wp_post',
-                    'source_ref' => get_the_ID(),
-                    'content' => $content,
-                    'created_at' => current_time('mysql')
-                ]);
-                $count++;
+                if (!empty($content)) {
+                    $wpdb->insert($table_name, [
+                        'type' => 'wp_post',
+                        'source_ref' => get_the_permalink(), // Save URL as ref
+                        'content' => $content,
+                        'created_at' => current_time('mysql')
+                    ]);
+                    $count++;
+                }
             }
         }
         echo '<div class="notice notice-success"><p>Scanned ' . $count . ' posts/pages.</p></div>';
@@ -97,7 +113,17 @@ $items = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
                             <td><?php echo $item->type; ?></td>
                             <td><?php echo $item->source_ref; ?></td>
                             <td><?php echo $item->created_at; ?></td>
-                            <td><button class="button button-small delete-kb" data-id="<?php echo $item->id; ?>">Delete</button>
+                            <td>
+                                <button class="button button-small edit-kb" data-id="<?php echo $item->id; ?>"
+                                    data-content="<?php echo esc_attr($item->content); ?>">Edit</button>
+
+                                <form method="post" style="display:inline-block; margin-left: 5px;"
+                                    onsubmit="return confirm('Are you sure?');">
+                                    <?php wp_nonce_field('nueva_kb_verify'); ?>
+                                    <input type="hidden" name="nueva_kb_action" value="delete_item">
+                                    <input type="hidden" name="item_id" value="<?php echo $item->id; ?>">
+                                    <button type="submit" class="button button-small button-link-delete">Delete</button>
+                                </form>
                             </td>
                         </tr>
                     <?php endforeach; else: ?>
@@ -107,6 +133,21 @@ $items = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
                 <?php endif; ?>
             </tbody>
         </table>
+    </div>
+
+    <!-- Edit Modal (Simple Inline Logic) -->
+    <div id="nueva-kb-edit-modal"
+        style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:#fff; padding:20px; border:1px solid #ccc; box-shadow:0 0 10px rgba(0,0,0,0.5); z-index:9999; width: 60%; max-width: 600px;">
+        <h3>Edit Knowledge Base Item</h3>
+        <form method="post">
+            <?php wp_nonce_field('nueva_kb_verify'); ?>
+            <input type="hidden" name="nueva_kb_action" value="edit_item">
+            <input type="hidden" name="edit_item_id" id="edit_item_id">
+            <textarea name="edit_content" id="edit_content" rows="10" style="width:100%;"></textarea>
+            <br><br>
+            <button type="submit" class="button button-primary">Save Changes</button>
+            <button type="button" class="button" id="close-edit-modal">Cancel</button>
+        </form>
     </div>
 
     <!-- Add URL -->
@@ -181,6 +222,20 @@ $items = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
 
         $(document).on('click', '.remove-row', function () {
             $(this).closest('.manual-row').remove();
+        });
+
+        // Edit Handler
+        $('.edit-kb').click(function (e) {
+            e.preventDefault();
+            var id = $(this).data('id');
+            var content = $(this).data('content');
+            $('#edit_item_id').val(id);
+            $('#edit_content').val(content);
+            $('#nueva-kb-edit-modal').fadeIn();
+        });
+
+        $('#close-edit-modal').click(function () {
+            $('#nueva-kb-edit-modal').fadeOut();
         });
     });
 </script>
