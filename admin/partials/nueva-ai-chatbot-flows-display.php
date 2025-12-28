@@ -3,21 +3,31 @@ global $wpdb;
 $table_name = $wpdb->prefix . 'bua_chat_flows';
 
 // Handle Save
-// Handle Save / Delete
+// Handle Save (Create or Update) / Delete
 if (isset($_POST['nueva_flow_action']) && check_admin_referer('nueva_flow_verify')) {
     if ($_POST['nueva_flow_action'] === 'save') {
         $title = sanitize_text_field($_POST['flow_title']);
         $json = wp_unslash($_POST['flow_json']);
         $keywords = sanitize_text_field($_POST['flow_keywords']);
+        $id = isset($_POST['flow_id']) ? intval($_POST['flow_id']) : 0;
 
-        $wpdb->insert($table_name, [
+        $data = [
             'title' => $title,
             'flow_json' => $json,
             'trigger_keywords' => $keywords,
-            'is_active' => 1,
-            'created_at' => current_time('mysql')
-        ]);
-        echo '<div class="notice notice-success"><p>Flow saved successfully.</p></div>';
+            'is_active' => 1
+        ];
+
+        if ($id > 0) {
+            // Update
+            $wpdb->update($table_name, $data, ['id' => $id]);
+            echo '<div class="notice notice-success"><p>Flow updated successfully.</p></div>';
+        } else {
+            // Insert
+            $data['created_at'] = current_time('mysql');
+            $wpdb->insert($table_name, $data);
+            echo '<div class="notice notice-success"><p>Flow created successfully.</p></div>';
+        }
     } elseif ($_POST['nueva_flow_action'] === 'delete') {
         $id = intval($_POST['flow_id']);
         $wpdb->delete($table_name, ['id' => $id]);
@@ -34,22 +44,24 @@ $flows = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
     <div style="display:flex; gap:20px;">
         <div style="flex:2;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <h3>Create New Flow (Visual Builder)</h3>
+                <h3 id="form-title">Create New Flow (Visual Builder)</h3>
                 <button type="button" class="button" id="btn-load-template">📂 Load Template (Dummy Flow)</button>
             </div>
 
             <form method="post" id="nueva-flow-form">
                 <?php wp_nonce_field('nueva_flow_verify'); ?>
                 <input type="hidden" name="nueva_flow_action" value="save">
+                <input type="hidden" name="flow_id" id="flow_id_hidden" value="">
+                
                 <table class="form-table">
                     <tr>
                         <th>Flow Title</th>
-                        <td><input type="text" name="flow_title" class="widefat" required
+                        <td><input type="text" name="flow_title" id="flow_title" class="widefat" required
                                 placeholder="e.g. Refund Policy Flow"></td>
                     </tr>
                     <tr>
                         <th>Trigger Keywords</th>
-                        <td><input type="text" name="flow_keywords" class="widefat"
+                        <td><input type="text" name="flow_keywords" id="flow_keywords" class="widefat"
                                 placeholder="refund, return, money back"></td>
                     </tr>
                 </table>
@@ -72,7 +84,8 @@ $flows = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
                 <textarea name="flow_json" id="flow_json_hidden" style="display:none;"></textarea>
 
                 <p class="submit">
-                    <input type="submit" class="button button-primary" value="Save Flow">
+                    <input type="submit" class="button button-primary" id="btn-submit-flow" value="Save Flow">
+                    <button type="button" class="button" id="btn-cancel-edit" style="display:none; margin-left:10px;">Cancel Edit</button>
                 </p>
             </form>
         </div>
@@ -217,6 +230,71 @@ $flows = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
                     renderSteps();
                 });
 
+                // --- Edit Flow Handler ---
+                $('.edit-flow-btn').click(function() {
+                    const id = $(this).data('id');
+                    const title = $(this).data('title');
+                    const keywords = $(this).data('keywords');
+                    const jsonRaw = $(this).data('json');
+
+                    // Populate Form
+                    $('#flow_id_hidden').val(id);
+                    $('#flow_title').val(title);
+                    $('#flow_keywords').val(keywords);
+                    
+                    // UI Updates
+                    $('#form-title').text('Edit Flow (ID: ' + id + ')');
+                    $('#btn-submit-flow').val('Update Flow');
+                    $('#btn-cancel-edit').show();
+                    
+                    $('html, body').animate({ scrollTop: 0 }, 'fast');
+
+                    // Convert JSON to Steps
+                    try {
+                        const data = (typeof jsonRaw === 'object') ? jsonRaw : JSON.parse(jsonRaw);
+                        steps = [];
+                        
+                        // Push all nodes
+                        if(data.nodes) {
+                            for (const [nodeId, node] of Object.entries(data.nodes)) {
+                                steps.push({
+                                    id: nodeId,
+                                    ...node
+                                });
+                            }
+                        }
+                        
+                        // Move start node to top for better UX
+                        if(data.start) {
+                            const startStep = steps.find(s => s.id === data.start);
+                            if(startStep) {
+                                steps = steps.filter(s => s.id !== data.start);
+                                steps.unshift(startStep);
+                            }
+                        }
+                        
+                        renderSteps();
+                        
+                    } catch(e) {
+                        console.error('Error parsing flow JSON', e);
+                        alert('Error loading flow data.');
+                    }
+                });
+
+                // Cancel Edit
+                $('#btn-cancel-edit').click(function() {
+                    $('#flow_id_hidden').val('');
+                    $('#nueva-flow-form')[0].reset();
+                    
+                    $('#form-title').text('Create New Flow (Visual Builder)');
+                    $('#btn-submit-flow').val('Save Flow');
+                    $(this).hide();
+                    
+                    steps = [];
+                    // Add one empty step
+                    $('#add-flow-step').click();
+                });
+
                 // Init
                 if (steps.length === 0) {
                     $('#add-flow-step').click();
@@ -281,6 +359,14 @@ $flows = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
                                 <td><?php echo esc_html($flow->title); ?></td>
                                 <td><?php echo esc_html($flow->trigger_keywords); ?></td>
                                 <td>
+                                    <button type="button" class="button button-small edit-flow-btn" 
+                                        data-id="<?php echo $flow->id; ?>"
+                                        data-title="<?php echo esc_attr($flow->title); ?>"
+                                        data-keywords="<?php echo esc_attr($flow->trigger_keywords); ?>"
+                                        data-json="<?php echo esc_attr($flow->flow_json); ?>">
+                                        Edit
+                                    </button>
+
                                     <form method="post" style="display:inline;" onsubmit="return confirm('Delete this flow?');">
                                         <?php wp_nonce_field('nueva_flow_verify'); ?>
                                         <input type="hidden" name="nueva_flow_action" value="delete">
