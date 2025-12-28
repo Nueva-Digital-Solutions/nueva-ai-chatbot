@@ -78,6 +78,15 @@ class Nueva_Chatbot_Admin
             'nueva-ai-leads',
             array($this, 'display_leads_page')
         );
+
+        add_submenu_page(
+            'nueva-ai-chat',
+            'Chat History',
+            'Chat History',
+            'manage_options',
+            'nueva-ai-history',
+            array($this, 'display_history_page')
+        );
     }
 
     public function display_general_settings()
@@ -102,6 +111,13 @@ class Nueva_Chatbot_Admin
     public function display_leads_page()
     {
         require_once plugin_dir_path(__FILE__) . '../admin/partials/nueva-ai-chatbot-leads-display.php';
+    }
+
+    public function display_history_page()
+    {
+        require_once plugin_dir_path(__FILE__) . 'class-nueva-chatbot-history.php';
+        $history = new Nueva_Chatbot_History();
+        $history->display_page();
     }
 
     private function save_settings()

@@ -180,6 +180,11 @@ class Nueva_Chatbot_API
         global $wpdb;
         $table_name = $wpdb->prefix . 'bua_chat_history';
 
+        $meta_data = array();
+        if ($sender === 'user') {
+            $meta_data['ip'] = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field($_SERVER['REMOTE_ADDR']) : 'Unknown';
+        }
+
         $wpdb->insert(
             $table_name,
             array(
@@ -187,7 +192,7 @@ class Nueva_Chatbot_API
                 'sender' => $sender,
                 'message' => $message,
                 'timestamp' => current_time('mysql'),
-                'meta_data' => ''
+                'meta_data' => !empty($meta_data) ? json_encode($meta_data) : ''
             ),
             array('%s', '%s', '%s', '%s', '%s')
         );
@@ -207,7 +212,9 @@ class Nueva_Chatbot_API
             return false;
         }
 
-        $chat_content = "<h3>Chat Transcript</h3><ul>";
+        $chat_content = "<h3>Chat Transcript</h3>";
+        $chat_content .= "<p><strong>Session ID:</strong> $session_id</p><ul>";
+
         foreach ($results as $row) {
             $sender = ucfirst($row->sender);
             $msg = nl2br(esc_html($row->message));
@@ -216,9 +223,12 @@ class Nueva_Chatbot_API
         }
         $chat_content .= "</ul>";
 
-        $to = get_option('admin_email'); // Default to admin email
-        $subject = "New Chat Transcript - Session $session_id";
+        $to = get_option('admin_email');
+        $site_name = get_bloginfo('name');
+        $subject = "[$site_name] Chat Transcript - Session $session_id";
+
         $headers = array('Content-Type: text/html; charset=UTF-8');
+        $headers[] = 'From: ' . $site_name . ' <' . $to . '>';
 
         return wp_mail($to, $subject, $chat_content, $headers);
     }
