@@ -18,62 +18,13 @@ jQuery(document).ready(function ($) {
         if (isOpen) {
             $window.css('display', 'flex').hide().fadeIn('fast', function () {
                 $(this).css('display', 'flex');
-                checkLeadGate();
             });
             $widget.removeClass('closed').addClass('open');
-            // Check gate on open
+            scrollToBottom();
         } else {
             $window.fadeOut('fast');
             $widget.removeClass('open').addClass('closed');
         }
-    });
-
-    function checkLeadGate() {
-        var isGuest = !nueva_chat_vars.is_logged_in;
-        var hasLead = localStorage.getItem('nueva_lead_captured');
-
-        if (isGuest && !hasLead) {
-            $('#nueva-chat-body').hide();
-            $('.nueva-chat-footer').hide();
-            $('#nueva-lead-gate').css('display', 'flex');
-        } else {
-            $('#nueva-lead-gate').hide();
-            $('#nueva-chat-body').show();
-            $('.nueva-chat-footer').css('display', 'flex');
-            scrollToBottom();
-        }
-    }
-
-    $('#nueva-lead-submit').click(function () {
-        var name = $('#nueva-lead-name').val();
-        var email = $('#nueva-lead-email').val();
-        var phone = $('#nueva-lead-phone').val();
-
-        if (!email && !phone) {
-            alert("Please provide at least an Email or Phone number.");
-            return;
-        }
-
-        // Send backend hidden message to capture lead
-        // The backend regex looks for email/phone in ANY message.
-        var hiddenMsg = "LEAD_CAPTURE: My name is " + name + ". Email: " + email + ". Phone: " + phone;
-
-        // We do NOT append this to UI, just send it.
-        $.post(nueva_chat_vars.ajax_url, {
-            action: 'nueva_chat_message',
-            message: hiddenMsg,
-            session_id: session_id,
-            nonce: nueva_chat_vars.nonce
-        });
-
-        // Set LocalStorage
-        localStorage.setItem('nueva_lead_captured', 'true');
-
-        // Restore UI
-        $('#nueva-lead-gate').hide();
-        $('#nueva-chat-body').fadeIn();
-        $('.nueva-chat-footer').fadeIn().css('display', 'flex');
-        scrollToBottom();
     });
 
     // Send Message Logic
@@ -95,7 +46,9 @@ jQuery(document).ready(function ($) {
         scrollToBottom();
 
         // AJAX Call to Backend
-        $body.append('<div class="message bot typing">Thinking...</div>');
+        // Visual Typing Dots
+        var loadingId = 'typing-' + Date.now();
+        $body.append('<div class="message bot typing" id="' + loadingId + '"><div class="typing-indicator"><span></span><span></span><span></span></div></div>');
         scrollToBottom();
 
         $.post(nueva_chat_vars.ajax_url, {
@@ -104,7 +57,7 @@ jQuery(document).ready(function ($) {
             session_id: session_id,
             nonce: nueva_chat_vars.nonce
         }, function (response) {
-            $('.typing').remove();
+            $('#' + loadingId).remove();
             if (response.success) {
                 // Parse markdown if possible (simple replacement for now)
                 var reply = escapeHtml(response.data.reply).replace(/\n/g, '<br>');
@@ -114,7 +67,7 @@ jQuery(document).ready(function ($) {
             }
             scrollToBottom();
         }).fail(function () {
-            $('.typing').remove();
+            $('#' + loadingId).remove();
             $body.append('<div class="message bot error">Connection failed.</div>');
             scrollToBottom();
         });

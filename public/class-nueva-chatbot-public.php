@@ -120,21 +120,7 @@ class Nueva_Chatbot_Public
                     </div>
                 </div>
 
-                <!-- Lead Gate Form -->
-                <div id="nueva-lead-gate"
-                    style="display:none; padding:20px; flex:1; flex-direction:column; justify-content:center; background:#f9f9f9;">
-                    <h4 style="margin-top:0; text-align:center;">Start Chatting</h4>
-                    <p style="font-size:13px; text-align:center; color:#666; margin-bottom:15px;">Please provide your details to
-                        connect.</p>
-                    <input type="text" id="nueva-lead-name" placeholder="Your Name"
-                        style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:4px;">
-                    <input type="email" id="nueva-lead-email" placeholder="Email Address"
-                        style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:4px;">
-                    <input type="tel" id="nueva-lead-phone" placeholder="Phone Number"
-                        style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ddd; border-radius:4px;">
-                    <button id="nueva-lead-submit" class="nueva-btn-primary" style="width:100%; padding:10px;">Start
-                        Chat</button>
-                </div>
+                <!-- Lead Gate Removed (Conversational Mode) -->
                 <div class="nueva-chat-footer">
                     <div class="nueva-footer-controls">
                         <input type="text" id="nueva-chat-input" placeholder="Type a message...">

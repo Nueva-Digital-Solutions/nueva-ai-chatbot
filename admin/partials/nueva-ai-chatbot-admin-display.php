@@ -165,15 +165,20 @@ $visibility = $options['visibility'];
                                 Professional</option>
                             <option value="friendly" <?php selected($behavior['tone'], 'friendly'); ?>>Friendly</option>
                             <option value="humorous" <?php selected($behavior['tone'], 'humorous'); ?>>Humorous</option>
+                            <option value="humorous" <?php selected($behavior['tone'], 'humorous'); ?>>Humorous</option>
                         </select>
                     </td>
                 </tr>
                 <tr>
                     <th scope="row">Custom Agent Instructions</th>
                     <td>
-                        <textarea name="nueva_agent_instructions" class="large-text" rows="5"
-                            placeholder="e.g. You are a helpful assistant for a car dealership. Always mention our warranty."><?php echo isset($behavior['agent_instructions']) ? esc_textarea($behavior['agent_instructions']) : ''; ?></textarea>
-                        <p class="description">Specific instructions for the AI's behavior and knowledge.</p>
+                        <textarea name="nueva_agent_instructions" class="large-text" rows="8"
+                            placeholder="Enter instructions..."><?php
+                            $default_instructions = "You are a helpful AI assistant.\n\n[RULE: LEAD GENERATION]\nIF user is GUEST (Not Logged In):\n1. Ask for their NAME.\n2. Then ask for their EMAIL.\n3. Then ask for their PHONE.\nDo this ONE BY ONE before answering complex queries.\n\nIF user is LOGGED IN:\nDo not ask for contact details. Proceed to help immediately.";
+                            echo isset($behavior['agent_instructions']) && !empty($behavior['agent_instructions']) ? esc_textarea($behavior['agent_instructions']) : $default_instructions;
+                            ?></textarea>
+                        <p class="description">Specific instructions for the AI's behavior. You can edit the Lead
+                            Generation rules above.</p>
                     </td>
                 </tr>
                 <tr>

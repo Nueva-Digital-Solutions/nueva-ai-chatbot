@@ -285,10 +285,15 @@ $full_context";
     private function get_dynamic_context()
     {
         $context = "";
+
         if (is_user_logged_in()) {
             $user = wp_get_current_user();
+            $context .= "User Status: LOGGED IN\n";
+            $context .= "Current User ID: " . $user->ID . "\n";
             $context .= "Current User Name: " . $user->display_name . "\n";
             $context .= "Current User Email: " . $user->user_email . "\n";
+
+            // 2. WooCommerce Orders (if active)
             if (class_exists('WooCommerce')) {
                 $orders = wc_get_orders(array('customer' => $user->ID, 'limit' => 3, 'orderby' => 'date', 'order' => 'DESC', 'return' => 'objects'));
                 if ($orders) {
@@ -304,8 +309,9 @@ $full_context";
                 }
             }
         } else {
-            $context .= "User is not logged in (Guest).\n";
+            $context .= "User Status: GUEST (Not Logged In)\n";
         }
+
         return $context;
     }
 
