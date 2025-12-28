@@ -175,6 +175,21 @@ class Nueva_Chatbot_API
         return $context;
     }
 
+    private function get_client_ip()
+    {
+        $ip = 'Unknown';
+        if (isset($_SERVER['HTTP_CLIENT_IP']) && !empty($_SERVER['HTTP_CLIENT_IP'])) {
+            $ip = $_SERVER['HTTP_CLIENT_IP'];
+        } elseif (isset($_SERVER['HTTP_X_FORWARDED_FOR']) && !empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            // Can be multiple IPs, first is original
+            $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+            $ip = trim($ips[0]);
+        } elseif (isset($_SERVER['REMOTE_ADDR']) && !empty($_SERVER['REMOTE_ADDR'])) {
+            $ip = $_SERVER['REMOTE_ADDR'];
+        }
+        return sanitize_text_field($ip);
+    }
+
     private function save_message($session_id, $sender, $message)
     {
         global $wpdb;
@@ -182,7 +197,7 @@ class Nueva_Chatbot_API
 
         $meta_data = array();
         if ($sender === 'user') {
-            $meta_data['ip'] = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field($_SERVER['REMOTE_ADDR']) : 'Unknown';
+            $meta_data['ip'] = $this->get_client_ip();
         }
 
         $wpdb->insert(

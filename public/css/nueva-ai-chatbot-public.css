@@ -71,7 +71,10 @@
 }
 
 .nueva-chat-header {
-    background: linear-gradient(135deg, var(--nueva-gradient-start, var(--nueva-primary, #0073aa)), var(--nueva-gradient-end, #005a87));
+    background: var(--nueva-primary, #0073aa);
+    /* Fallback 1 */
+    background: linear-gradient(135deg, var(--nueva-gradient-start, #0073aa), var(--nueva-gradient-end, #005a87));
+    /* Standard */
     color: var(--nueva-secondary, #fff);
     padding: 20px;
     display: flex;
@@ -79,25 +82,80 @@
     justify-content: space-between;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     flex-shrink: 0;
-    /* Prevent header from shrinking */
+}
+
+.agent-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+.agent-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #fff;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+}
+
+.close-chat {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1;
+}
+
+.close-chat:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: rotate(90deg);
 }
 
 /* ... existing styles ... */
 
 .nueva-chat-body {
     flex: 1;
+    /* Grow to fill space */
     padding: 20px;
-    overflow-y: scroll !important;
-    /* Force scrollbar possibility */
+    overflow-y: auto !important;
+    /* Enable scrolling */
     background: #f4f6f9;
     display: flex;
     flex-direction: column;
     gap: 15px;
-    /* Removed height: 100% to let flex work properly with footer */
     min-height: 0;
-    /* Crucial for scrolling */
+    /* Crucial for flex scrolling */
     scroll-behavior: smooth;
     overscroll-behavior: contain;
+}
+
+/* Scrollbar Styling */
+.nueva-chat-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.nueva-chat-body::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.nueva-chat-body::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+}
+
+.nueva-chat-body::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.4);
 }
 
 .message {
