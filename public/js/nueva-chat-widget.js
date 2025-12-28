@@ -159,7 +159,7 @@ jQuery(document).ready(function ($) {
                 }
 
                 $element.html(html.substring(0, i));
-                scrollToBottom();
+                scrollToBottom(false); // Instant scroll for smoothness
                 setTimeout(type, speed);
             } else {
                 if (onComplete) onComplete();
@@ -186,8 +186,12 @@ jQuery(document).ready(function ($) {
         }
     }
 
-    function scrollToBottom() {
-        $body.animate({ scrollTop: $body.prop("scrollHeight") }, 500);
+    function scrollToBottom(animate = true) {
+        if (animate) {
+            $body.stop().animate({ scrollTop: $body.prop("scrollHeight") }, 500);
+        } else {
+            $body.scrollTop($body.prop("scrollHeight"));
+        }
     }
 
     function escapeHtml(text) {

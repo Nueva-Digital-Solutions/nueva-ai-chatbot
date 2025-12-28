@@ -383,17 +383,39 @@ class Nueva_Chatbot_API
                     $messages_text .= $row->message . "\n";
                 }
 
+                // 1. Extract Email (High Confidence)
                 preg_match('/[a-z0-9_\-\+\.]+@[a-z0-9\-]+\.([a-z]{2,4})(?:\.[a-z]{2})?/i', $messages_text, $email_matches);
                 if (!empty($email_matches[0]))
                     $found_email = $email_matches[0];
 
-                preg_match('/(?:order\s*#?|#)\s*(\d{4,8})\b/i', $messages_text, $order_matches);
-                if (!empty($order_matches[1]))
-                    $found_order_id = $order_matches[1];
-
-                preg_match('/\b\d{7,15}\b/', str_replace(['-', ' ', '(', ')'], '', $messages_text), $phone_matches);
+                // 2. Extract Phone Number (10-15 digits, ignoring format chars)
+                // Use a strict lookahead/behind or just clean string first
+                $clean_text_digits = preg_replace('/[^0-9]/', '', $messages_text);
+                // Look for clusters of 10-15 digits in the raw text to be safer
+                preg_match('/\b\d{10,15}\b/', str_replace(['-', ' ', '(', ')'], '', $messages_text), $phone_matches);
                 if (!empty($phone_matches[0]))
                     $found_phone = $phone_matches[0];
+
+                // 3. Extract Order ID
+                // Strategy: prioritizing labeled IDs first ("Order #123" or "#123")
+                // Only fallback to bare digits if they are typical order length (e.g., 3-8 digits) and NOT phone length
+                $found_order_id = null;
+
+                // A. Explicit "Order #12345" or "#12345"
+                preg_match('/(?:order\s*|#)\s*(\d{3,9})\b/i', $messages_text, $explicit_order_matches);
+                if (!empty($explicit_order_matches[1])) {
+                    $found_order_id = $explicit_order_matches[1];
+                }
+                // B. Fallback: Loose 4-8 digits, but ensure it's NOT the same validity as the phone number found
+                else {
+                    preg_match('/\b\d{4,8}\b/', $messages_text, $loose_matches);
+                    if (!empty($loose_matches[0])) {
+                        // Check if this "Order ID" is actually part of the phone number
+                        if (!$found_phone || strpos($found_phone, $loose_matches[0]) === false) {
+                            $found_order_id = $loose_matches[0];
+                        }
+                    }
+                }
 
                 if (!empty($found_order_id) && (!empty($found_email) || !empty($found_phone))) {
                     // Query WooCommerce
