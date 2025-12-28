@@ -113,23 +113,39 @@ class Nueva_Chatbot_API
             wp_send_json_error('Invalid feedback data.');
         }
 
-        // Trigger Async Categorization (Sync for now to ensure it runs)
-        $category = $this->categorize_conversation($session_id);
-
+        // Trigger Async Categorization
+        $category = 'General';
+        // Only classify if table column exists (backwards compatibility)
         global $wpdb;
         $table_name = $wpdb->prefix . 'bua_chat_feedback';
+        $has_cat_col = $wpdb->get_results("SHOW COLUMNS FROM $table_name LIKE 'category'");
 
-        $wpdb->insert(
-            $table_name,
-            array(
-                'session_id' => $session_id,
-                'rating' => $rating,
-                'reason' => $reason,
-                'category' => $category,
-                'created_at' => current_time('mysql')
-            ),
-            array('%s', '%d', '%s', '%s', '%s')
-        );
+        if ($has_cat_col) {
+            $category = $this->categorize_conversation($session_id);
+            $wpdb->insert(
+                $table_name,
+                array(
+                    'session_id' => $session_id,
+                    'rating' => $rating,
+                    'reason' => $reason,
+                    'category' => $category,
+                    'created_at' => current_time('mysql')
+                ),
+                array('%s', '%d', '%s', '%s', '%s')
+            );
+        } else {
+            // Fallback for old schema
+            $wpdb->insert(
+                $table_name,
+                array(
+                    'session_id' => $session_id,
+                    'rating' => $rating,
+                    'reason' => $reason,
+                    'created_at' => current_time('mysql')
+                ),
+                array('%s', '%d', '%s', '%s')
+            );
+        }
 
         wp_send_json_success('Feedback saved.');
     }
@@ -143,15 +159,7 @@ class Nueva_Chatbot_API
             return 'Unknown';
 
         // 2. Prepare Prompt
-        $system_prompt = "Analyze the following chat transcript between a User and an AI Agent.
-        Classify the USER'S primary intent into exactly ONE of these categories:
-        - Sales (Asking about products, pricing, buying)
-        - Support (Asking for help, status, how-to)
-        - Technical (Bugs, errors, integration issues)
-        - General (Greeting, small talk, unknown)
-        - Complaint (Unhappy, negative feedback)
-        
-        Return ONLY the category name (e.g., 'Sales'). Do not add any punctuation or explanation.";
+        $system_prompt = "Analyze the following chat transcript. Classify intent into ONE: Sales, Support, Technical, General, Complaint. Return ONLY category name.";
 
         // 3. Call Gemini
         $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->api_key}";
@@ -160,7 +168,7 @@ class Nueva_Chatbot_API
             'contents' => [
                 [
                     'parts' => [
-                        ['text' => $system_prompt . "\n\nTRANSCRIPT:\n" . $messages]
+                        ['text' => $system_prompt . "\n\n" . $messages]
                     ]
                 ]
             ]
@@ -169,11 +177,11 @@ class Nueva_Chatbot_API
         $response = wp_remote_post($url, array(
             'body' => json_encode($body),
             'headers' => array('Content-Type' => 'application/json'),
-            'timeout' => 15
+            'timeout' => 5
         ));
 
         if (is_wp_error($response))
-            return 'Unknown';
+            return 'General';
 
         $data = json_decode(wp_remote_retrieve_body($response), true);
 
@@ -337,18 +345,27 @@ class Nueva_Chatbot_API
         }
 
         // 5. Lead Gen Logic
-        if ($lead_mode === 'conversational') {
-            $system_prompt .= "\n[RULE: LEAD GENERATION]\n";
-            if ($skip_logged_in) {
-                $system_prompt .= "IF User Status is LOGGED IN: Do NOT ask for contact info. Proceed to help.\n";
+        $has_leads = $this->has_lead_info($session_id);
+
+        if ($lead_mode === 'conversational' && !$has_leads) {
+            $should_ask = true;
+            if ($skip_logged_in && is_user_logged_in()) {
+                $should_ask = false;
+                $system_prompt .= "\n[RULE: LEAD GENERATION] User is LOGGED IN. Do NOT ask for contact info. Proceed to help.\n";
             }
-            $system_prompt .= "IF User Status is GUEST:\n";
-            $system_prompt .= "- Your GOAL is to collect these fields ONE BY ONE: [$lead_fields].\n";
-            $system_prompt .= "- VALIDATION: Check each input. \n";
-            $system_prompt .= "  * Email MUST look like an email (user@domain). If invalid, say 'That doesn't look right. Please enter a valid email.'\n";
-            $system_prompt .= "  * Phone MUST contain digits. If text only, reject it.\n";
-            $system_prompt .= "- Once all fields are collected, proceed to answer their question.\n";
-            $system_prompt .= "- during this collection phase, do NOT output [SUGGESTIONS].\n";
+
+            if ($should_ask) {
+                $system_prompt .= "\n[RULE: LEAD GENERATION]\n";
+                $system_prompt .= "IF User Status is GUEST (or Lead Info is Missing):\n";
+                $system_prompt .= "- Your GOAL is to collect these fields ONE BY ONE: [$lead_fields].\n";
+                $system_prompt .= "- VALIDATION: Check each input. \n";
+                $system_prompt .= "  * Email MUST look like an email (user@domain). If invalid, say 'That doesn't look right. Please enter a valid email.'\n";
+                $system_prompt .= "  * Phone MUST contain digits. If text only, reject it.\n";
+                $system_prompt .= "- Once all fields are collected, proceed to answer their question.\n";
+                $system_prompt .= "- during this collection phase, do NOT output [SUGGESTIONS].\n";
+            }
+        } elseif ($lead_mode === 'conversational' && $has_leads) {
+            $system_prompt .= "\n[RULE: LEAD GENERATION] Lead info has already been collected. Do NOT ask for it again.\n";
         }
 
         $system_prompt .= "
@@ -494,14 +511,37 @@ class Nueva_Chatbot_API
     {
         global $wpdb;
         $table_name = $wpdb->prefix . 'bua_leads';
+
+        // 1. Auto-Capture Logged In User (if not exists)
+        if (is_user_logged_in()) {
+            $user = wp_get_current_user();
+            $existing = $wpdb->get_row($wpdb->prepare("SELECT id, user_data FROM $table_name WHERE chat_session_id = %s", $session_id));
+
+            if (!$existing) {
+                // Create initial lead from WP Account
+                $account_data = [
+                    'name' => $user->display_name,
+                    'email' => $user->user_email,
+                    'is_logged_in' => true
+                ];
+                $wpdb->insert($table_name, array('chat_session_id' => $session_id, 'user_data' => json_encode($account_data), 'collected_at' => current_time('mysql'), 'is_synced' => 0));
+                // We return here? No, look for phone in message too.
+            }
+        }
+
+        // 2. Parse Message for Email/Phone
         preg_match('/[a-z0-9_\-\+\.]+@[a-z0-9\-]+\.([a-z]{2,4})(?:\.[a-z]{2})?/i', $message, $email_matches);
-        preg_match('/\b\d{10,15}\b/', $message, $phone_matches);
+
+        // Sanitize for Phone: Remove spaces, dashes, parens
+        $clean_msg = preg_replace('/[^0-9]/', '', $message);
+        // Look for 10-15 digits
+        preg_match('/\d{10,15}/', $clean_msg, $phone_matches);
 
         $data = [];
         if (!empty($email_matches[0]))
             $data['email'] = $email_matches[0];
         if (!empty($phone_matches[0]))
-            $data['phone'] = $phone_matches[0];
+            $data['phone'] = $phone_matches[0]; // Stores raw digits
 
         if (!empty($data)) {
             $existing = $wpdb->get_row($wpdb->prepare("SELECT user_data FROM $table_name WHERE chat_session_id = %s", $session_id));
