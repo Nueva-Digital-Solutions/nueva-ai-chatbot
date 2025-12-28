@@ -200,47 +200,58 @@
     background: #fff;
     border-top: 1px solid #eee;
     display: flex;
-    flex-wrap: nowrap;
-    /* Prevent wrapping */
-    gap: 8px;
-    /* Slightly tighter gap */
-    align-items: center;
+    flex-direction: column;
+    /* Stack controls and branding */
+    gap: 5px;
+    align-items: stretch;
     flex-shrink: 0;
+}
+
+.nueva-footer-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
 }
 
 .nueva-chat-footer input {
     flex: 1;
-    padding: 10px 12px;
+    padding: 10px 15px;
     border: 1px solid #e0e0e0;
     border-radius: 25px;
     outline: none;
     transition: border-color 0.2s;
     font-size: 14px;
     min-width: 0;
-    /* Allow shrinking if needed */
 }
 
 .nueva-chat-footer input:focus {
     border-color: var(--nueva-primary, #0073aa);
 }
 
-.nueva-chat-footer button {
-    padding: 8px 16px;
-    /* Reduced padding */
+.nueva-chat-footer button#nueva-chat-send {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: var(--nueva-primary, #0073aa);
     color: var(--nueva-secondary, #fff);
     border: none;
-    border-radius: 25px;
+    border-radius: 50%;
     cursor: pointer;
-    font-weight: 600;
-    font-size: 13px;
-    /* Slightly smaller font */
-    white-space: nowrap;
-    transition: opacity 0.2s;
+    transition: transform 0.2s, opacity 0.2s;
+    flex-shrink: 0;
 }
 
-.nueva-chat-footer button:hover {
+.nueva-chat-footer button#nueva-chat-send:hover {
+    transform: scale(1.05);
     opacity: 0.9;
+}
+
+.nueva-chat-footer button#nueva-chat-send svg {
+    display: block;
 }
 
 /* End Chat Button Styling */
@@ -248,10 +259,24 @@
     background: #ff4757 !important;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 4px;
-    font-size: 12px !important;
-    padding: 8px 12px !important;
-    /* Compact */
+    font-size: 11px !important;
+    font-weight: 600;
+    padding: 0 10px !important;
+    /* Compact horizontal padding */
+    height: 36px;
+    /* Match send button height */
+    border: none;
+    border-radius: 18px;
+    /* Rounded pill */
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: background 0.2s;
+    flex-shrink: 0;
 }
 
 .nueva-end-chat-btn:hover {
