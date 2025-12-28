@@ -41,11 +41,12 @@ $visibility = $options['visibility'];
                     <th scope="row">AI Model</th>
                     <td>
                         <select name="nueva_model">
-                            <option value="gemini-1.5-pro" <?php selected($general['model'], 'gemini-1.5-pro'); ?>>
-                                Gemini 1.5 Pro</option>
                             <option value="gemini-1.5-flash" <?php selected($general['model'], 'gemini-1.5-flash'); ?>>
-                                Gemini 1.5 Flash</option>
-                            <option value="gpt-4" disabled>GPT-4 (Coming Soon)</option>
+                                Gemini 1.5 Flash (Fastest)</option>
+                            <option value="gemini-1.5-pro-001" <?php selected($general['model'], 'gemini-1.5-pro-001'); ?>>
+                                Gemini 1.5 Pro (Best Quality)</option>
+                            <option value="gemini-1.0-pro" <?php selected($general['model'], 'gemini-1.0-pro'); ?>>
+                                Gemini 1.0 Pro (Legacy)</option>
                         </select>
                     </td>
                 </tr>
@@ -157,7 +158,8 @@ $visibility = $options['visibility'];
         <!-- Visibility Tab -->
         <div id="tab-visibility" class="tab-content" style="display:none;">
             <p>The chatbot is displayed on <strong>all pages</strong> by default. Select pages below to
-                <strong>hide</strong> it.</p>
+                <strong>hide</strong> it.
+            </p>
             <?php
             // Fetch all pages and posts
             $all_pages = get_posts([
