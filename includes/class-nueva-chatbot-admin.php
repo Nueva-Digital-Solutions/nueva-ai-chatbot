@@ -112,6 +112,7 @@ class Nueva_Chatbot_Admin
                 'api_key' => sanitize_text_field($_POST['nueva_api_key']),
                 'agent_name' => sanitize_text_field($_POST['nueva_agent_name']),
                 'model' => sanitize_text_field($_POST['nueva_model']),
+                'model_custom' => sanitize_text_field($_POST['nueva_model_custom']),
             ),
             'appearance' => array(
                 'primary_color' => sanitize_hex_color($_POST['nueva_primary_color']),
