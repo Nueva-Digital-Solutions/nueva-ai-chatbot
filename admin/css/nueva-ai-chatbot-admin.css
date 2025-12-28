@@ -1,0 +1,76 @@
+/* Admin Panel Styling */
+
+/* Tab Navigation */
+.nav-tab-wrapper {
+    margin-bottom: 20px;
+    border-bottom: 2px solid #ddd;
+}
+
+.nav-tab {
+    font-size: 16px;
+    padding: 10px 20px;
+    margin-right: 5px;
+    background: #f1f1f1;
+    border: 1px solid #ddd;
+    border-bottom: none;
+    color: #555;
+    transition: all 0.3s ease;
+}
+
+.nav-tab-active,
+.nav-tab:hover {
+    background: #fff;
+    color: #0073aa;
+    border-bottom: 2px solid #fff;
+    margin-bottom: -2px;
+}
+
+/* Form Styles */
+.form-table th {
+    font-weight: 600;
+    color: #333;
+}
+
+.form-table input[type="text"],
+.form-table input[type="email"],
+.form-table input[type="password"],
+.form-table select,
+.form-table textarea {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 8px 12px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: border-color 0.2s;
+}
+
+.form-table input:focus,
+.form-table select:focus,
+.form-table textarea:focus {
+    border-color: #0073aa;
+    box-shadow: 0 0 0 1px #0073aa;
+    outline: none;
+}
+
+/* Save Button */
+.submit .button-primary {
+    background: linear-gradient(135deg, #0073aa, #005a87);
+    border: none;
+    padding: 10px 25px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.submit .button-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Descriptions */
+.description {
+    font-style: italic;
+    color: #777;
+    margin-top: 5px;
+}

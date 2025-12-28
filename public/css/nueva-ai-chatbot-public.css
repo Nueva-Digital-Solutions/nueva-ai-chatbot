@@ -71,45 +71,18 @@
 }
 
 .nueva-chat-header {
-    background: linear-gradient(135deg, var(--nueva-primary, #0073aa), #005a87);
+    background: linear-gradient(135deg, var(--nueva-gradient-start, var(--nueva-primary, #0073aa)), var(--nueva-gradient-end, #005a87));
     color: var(--nueva-secondary, #fff);
     padding: 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+    /* Prevent header from shrinking */
 }
 
-.agent-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-weight: 600;
-    font-size: 1.1em;
-}
-
-.agent-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-    background: #fff;
-    border: 2px solid rgba(255, 255, 255, 0.8);
-}
-
-.close-chat {
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 28px;
-    cursor: pointer;
-    transition: color 0.2s;
-    line-height: 1;
-}
-
-.close-chat:hover {
-    color: #fff;
-}
+/* ... existing styles ... */
 
 .nueva-chat-body {
     flex: 1;
@@ -120,31 +93,11 @@
     display: flex;
     flex-direction: column;
     gap: 15px;
-    height: 100%;
-    /* Ensure it fills available space */
+    /* Removed height: 100% to let flex work properly with footer */
     min-height: 0;
     /* Crucial for scrolling */
     scroll-behavior: smooth;
     overscroll-behavior: contain;
-}
-
-/* Force Scrollbar Styling */
-.nueva-chat-body::-webkit-scrollbar {
-    display: block !important;
-    width: 8px;
-}
-
-.nueva-chat-body::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.05);
-}
-
-.nueva-chat-body::-webkit-scrollbar-thumb {
-    background-color: rgba(0, 0, 0, 0.3);
-    border-radius: 10px;
-}
-
-.nueva-chat-body::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(0, 0, 0, 0.5);
 }
 
 .message {

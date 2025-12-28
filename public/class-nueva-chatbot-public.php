@@ -17,7 +17,7 @@ class Nueva_Chatbot_Public
 
         $defaults = [
             'general' => ['api_key' => '', 'agent_name' => 'Nueva Agent', 'model' => 'gemini-1.5-pro'],
-            'appearance' => ['primary_color' => '#0073aa', 'secondary_color' => '#ffffff', 'font_family' => 'Roboto', 'font_size' => '16', 'position_desktop' => 'right', 'position_mobile' => 'right', 'profile_image' => ''],
+            'appearance' => ['primary_color' => '#0073aa', 'primary_gradient_start' => '#0073aa', 'primary_gradient_end' => '#005a87', 'secondary_color' => '#ffffff', 'font_family' => 'Roboto', 'font_size' => '16', 'position_desktop' => 'right', 'position_mobile' => 'right', 'profile_image' => ''],
             'behavior' => ['tone' => 'professional', 'default_lang' => 'en', 'supported_langs' => 'en'],
             'visibility' => ['include_pages' => [], 'exclude_pages' => []]
         ];
@@ -48,6 +48,8 @@ class Nueva_Chatbot_Public
             :root {
                 --nueva-primary: " . esc_attr($appearance['primary_color']) . ";
                 --nueva-secondary: " . esc_attr($appearance['secondary_color']) . ";
+                --nueva-gradient-start: " . esc_attr($appearance['primary_gradient_start']) . ";
+                --nueva-gradient-end: " . esc_attr($appearance['primary_gradient_end']) . ";
                 --nueva-font: '" . esc_attr($appearance['font_family']) . "', sans-serif;
                 --nueva-font-size: " . intval($appearance['font_size']) . "px;
             }

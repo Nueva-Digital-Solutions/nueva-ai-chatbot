@@ -73,14 +73,14 @@ $visibility = $options['visibility'];
                         <p class="description">Select a preset or choose "Custom" to enter a specific Model ID manually.
                         </p>
                         <script>
-                            jQuery(document).ready(function  ($)  {
-                                $('#nueva_model_select').change(functio n  () {
-                                     if ($(this).val() === 'custom') {
-                                        $('#nueva_model_custom').show();
-                                    } else {
-                                        $('#nueva_model_custom').hide();
-                                    }
-                                });
+                            jQuery(document).ready(function ($) {
+                                $('#nueva_model_select').change(functio n() {
+                                    if($(this).val() === 'custom') {
+                                    $('#nueva_model_custom').show();
+                                } else {
+                                    $('#nueva_model_custom').hide();
+                                }
+                            });
                             });
                         </script>
                     </td>
@@ -92,10 +92,22 @@ $visibility = $options['visibility'];
         <div id="tab-appearance" class="tab-content" style="display:none;">
             <table class="form-table">
                 <tr>
-                    <th scope="row">Primary Color</th>
+                    <th scope="row">Primary Color (Fallback)</th>
                     <td><input type="text" name="nueva_primary_color"
                             value="<?php echo esc_attr($appearance['primary_color']); ?>" class="my-color-field"
                             data-default-color="#0073aa" /></td>
+                </tr>
+                <tr>
+                    <th scope="row">Gradient Start</th>
+                    <td><input type="text" name="nueva_primary_gradient_start"
+                            value="<?php echo isset($appearance['primary_gradient_start']) ? esc_attr($appearance['primary_gradient_start']) : '#0073aa'; ?>"
+                            class="my-color-field" data-default-color="#0073aa" /></td>
+                </tr>
+                <tr>
+                    <th scope="row">Gradient End</th>
+                    <td><input type="text" name="nueva_primary_gradient_end"
+                            value="<?php echo isset($appearance['primary_gradient_end']) ? esc_attr($appearance['primary_gradient_end']) : '#005a87'; ?>"
+                            class="my-color-field" data-default-color="#005a87" /></td>
                 </tr>
                 <tr>
                     <th scope="row">Secondary Color (Text/Icon)</th>

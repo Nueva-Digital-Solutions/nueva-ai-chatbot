@@ -133,6 +133,8 @@ class Nueva_Chatbot_Admin
             ),
             'appearance' => array(
                 'primary_color' => sanitize_hex_color($_POST['nueva_primary_color']),
+                'primary_gradient_start' => sanitize_hex_color($_POST['nueva_primary_gradient_start']),
+                'primary_gradient_end' => sanitize_hex_color($_POST['nueva_primary_gradient_end']),
                 'secondary_color' => sanitize_hex_color($_POST['nueva_secondary_color']),
                 'font_family' => sanitize_text_field($_POST['nueva_font_family']),
                 'font_size' => intval($_POST['nueva_font_size']),
