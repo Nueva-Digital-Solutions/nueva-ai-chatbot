@@ -40,7 +40,7 @@ class Nueva_Chatbot_Public
         if (!$this->should_render())
             return;
 
-        wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/nueva-ai-chatbot-public.css', array('dashicons'), $this->version, 'all');
+        wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/nueva-ai-chatbot-public.css', array('dashicons'), time(), 'all');
 
         // Dynamic CSS
         $appearance = $this->options['appearance'];

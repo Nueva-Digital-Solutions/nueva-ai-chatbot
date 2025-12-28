@@ -196,26 +196,28 @@
 }
 
 .nueva-chat-footer {
-    padding: 15px;
+    padding: 10px 15px;
     background: #fff;
     border-top: 1px solid #eee;
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
+    flex-wrap: nowrap;
+    /* Prevent wrapping */
+    gap: 8px;
+    /* Slightly tighter gap */
     align-items: center;
     flex-shrink: 0;
-    /* Prevent footer from collapsing */
 }
 
 .nueva-chat-footer input {
     flex: 1;
-    padding: 12px 15px;
+    padding: 10px 12px;
     border: 1px solid #e0e0e0;
     border-radius: 25px;
     outline: none;
     transition: border-color 0.2s;
     font-size: 14px;
-    min-width: 150px;
+    min-width: 0;
+    /* Allow shrinking if needed */
 }
 
 .nueva-chat-footer input:focus {
@@ -223,14 +225,16 @@
 }
 
 .nueva-chat-footer button {
-    padding: 10px 20px;
+    padding: 8px 16px;
+    /* Reduced padding */
     background: var(--nueva-primary, #0073aa);
     color: var(--nueva-secondary, #fff);
     border: none;
     border-radius: 25px;
     cursor: pointer;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
+    /* Slightly smaller font */
     white-space: nowrap;
     transition: opacity 0.2s;
 }
@@ -242,12 +246,12 @@
 /* End Chat Button Styling */
 .nueva-end-chat-btn {
     background: #ff4757 !important;
-    /* Premium red */
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     font-size: 12px !important;
     padding: 8px 12px !important;
+    /* Compact */
 }
 
 .nueva-end-chat-btn:hover {
