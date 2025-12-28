@@ -29,6 +29,86 @@ jQuery(document).ready(function ($) {
         }
     });
 
+    // --- File Attachment Logic (v1.6.0) ---
+    var currentAttachment = null;
+
+    // Inject File Input & Icon if not present (handled effectively by CSS/PHP usually, but ensuring dynamic here)
+    if ($('#nueva-chat-file').length === 0) {
+        $('<input type="file" id="nueva-chat-file" style="display:none;" accept="image/png, image/jpeg, image/webp, application/pdf">').insertAfter($input);
+        $('<button type="button" id="nueva-chat-attach" class="nueva-chat-icon-btn"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg></button>').insertBefore($input);
+    }
+
+    // Attachment Preview Ctn
+    var $previewCtn = $('<div id="nueva-attachment-preview" style="display:none; background:#f0f0f1; padding:5px 10px; border-bottom:1px solid #ddd; font-size:12px; display:flex; align-items:center; justify-content:space-between;"></div>');
+    $previewCtn.insertBefore('.nueva-chat-footer');
+    $previewCtn.hide(); // Force hide initially
+
+    $('#nueva-chat-attach').click(function () {
+        $('#nueva-chat-file').click();
+    });
+
+    $('#nueva-chat-file').change(function () {
+        var file = this.files[0];
+        if (!file) return;
+
+        // Validation
+        if (file.size > 1048576) { // 1MB
+            alert('File is too large. Max 1MB allowed.');
+            $(this).val('');
+            return;
+        }
+        var allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+        if (allowed.indexOf(file.type) === -1) {
+            alert('Invalid file type. Only JPG, PNG, WEBP, PDF allowed.');
+            $(this).val('');
+            return;
+        }
+
+        // Upload
+        var formData = new FormData();
+        formData.append('action', 'nueva_upload_file');
+        formData.append('file', file);
+        formData.append('nonce', nueva_chat_vars.nonce);
+
+        // Disable input while uploading
+        $('#nueva-chat-attach').css('opacity', '0.5');
+
+        $.ajax({
+            url: nueva_chat_vars.ajax_url,
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function (response) {
+                $('#nueva-chat-attach').css('opacity', '1');
+                if (response.success) {
+                    currentAttachment = response.data; // {url, path, type}
+                    currentAttachment.name = file.name;
+                    showAttachmentPreview();
+                } else {
+                    alert('Upload failed: ' + (response.data || 'Unknown error'));
+                }
+            },
+            error: function () {
+                $('#nueva-chat-attach').css('opacity', '1');
+                alert('Upload connection failed.');
+            }
+        });
+    });
+
+    function showAttachmentPreview() {
+        if (!currentAttachment) return;
+        var iconStr = (currentAttachment.type === 'application/pdf') ? '📄' : '🖼️';
+        $previewCtn.html(`<span>${iconStr} ${currentAttachment.name}</span> <span id="nueva-remove-attach" style="cursor:pointer; color:red; font-weight:bold;">×</span>`);
+        $previewCtn.slideDown('fast');
+
+        $('#nueva-remove-attach').click(function () {
+            currentAttachment = null;
+            $('#nueva-chat-file').val('');
+            $previewCtn.slideUp('fast');
+        });
+    }
+
     // Send Message Logic
     $('#nueva-chat-send').click(function () {
         sendMessage();
@@ -40,23 +120,44 @@ jQuery(document).ready(function ($) {
 
     function sendMessage(text = null) {
         var msg = text || $input.val().trim();
-        if (!msg) return;
+        if (!msg && !currentAttachment) return; // Allow empty msg if attachment exists
+
+        // If attachment, mimic msg content
+        if (currentAttachment && !msg) msg = "Sent an attachment.";
 
         // Append User Msg
-        appendMessage('user', msg);
+        var displayMsg = msg;
+        if (currentAttachment) {
+            displayMsg += `<br><small><em>[Attachment: ${currentAttachment.name}]</em></small>`;
+        }
+        appendMessage('user', displayMsg, false, true); // allowHtml true for attachment subtext
         $input.val('');
+
+        // Prepare Payload
+        var payload = {
+            action: 'nueva_chat_message',
+            message: msg,
+            session_id: session_id,
+            nonce: nueva_chat_vars.nonce
+        };
+
+        if (currentAttachment) {
+            payload.attachment_path = currentAttachment.path;
+            payload.attachment_url = currentAttachment.url;
+            payload.attachment_mime = currentAttachment.type;
+
+            // Clear Attachment State
+            currentAttachment = null;
+            $('#nueva-chat-file').val('');
+            $previewCtn.slideUp('fast');
+        }
 
         // Visual Typing Dots
         var loadingId = 'typing-' + Date.now();
         $body.append('<div class="message bot typing" id="' + loadingId + '"><div class="typing-indicator"><span></span><span></span><span></span></div></div>');
         scrollToBottom();
 
-        $.post(nueva_chat_vars.ajax_url, {
-            action: 'nueva_chat_message',
-            message: msg,
-            session_id: session_id,
-            nonce: nueva_chat_vars.nonce
-        }, function (response) {
+        $.post(nueva_chat_vars.ajax_url, payload, function (response) {
             $('#' + loadingId).remove();
             if (response.success) {
                 appendMessage('bot', response.data.reply);

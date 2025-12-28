@@ -1,6 +1,6 @@
 <?php
 $options = get_option('nueva_chat_options', [
-    'general' => ['api_key' => '', 'agent_name' => 'Nueva Agent', 'model' => 'gemini-1.5-pro'],
+    'general' => ['api_key' => '', 'agent_name' => 'Nueva Agent', 'model' => 'gemini-2.5-flash'],
     'appearance' => ['primary_color' => '#0073aa', 'secondary_color' => '#ffffff', 'font_family' => 'Roboto', 'font_size' => '16', 'position_desktop' => 'right', 'position_mobile' => 'right', 'profile_image' => ''],
     'behavior' => ['tone' => 'professional', 'default_lang' => 'en', 'supported_langs' => 'en'],
     'visibility' => ['include_pages' => [], 'exclude_pages' => []]
@@ -58,10 +58,6 @@ $visibility = $options['visibility'];
                                 Gemini 3.0 Flash Preview</option>
                             <option value="gemini-3-pro-preview" <?php selected($general['model'], 'gemini-3-pro-preview'); ?>>
                                 Gemini 3.0 Pro Preview</option>
-                            <option value="gemini-1.5-flash" <?php selected($general['model'], 'gemini-1.5-flash'); ?>>
-                                Gemini 1.5 Flash (Legacy)</option>
-                            <option value="gemini-1.5-pro" <?php selected($general['model'], 'gemini-1.5-pro'); ?>>
-                                Gemini 1.5 Pro (Legacy)</option>
                             <option value="custom" <?php selected($general['model'], 'custom'); ?>>
                                 Custom / Other...</option>
                         </select>
@@ -147,7 +143,8 @@ $visibility = $options['visibility'];
                         <select name="nueva_font_family">
                             <?php foreach ($fonts as $font): ?>
                                 <option value="<?php echo $font; ?>" <?php selected($appearance['font_family'], $font); ?>>
-                                    <?php echo $font; ?></option>
+                                    <?php echo $font; ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
                         <p class="description">Standard Google Fonts.</p>
@@ -307,13 +304,14 @@ $visibility = $options['visibility'];
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row">Lead Collection Criteria</th>
+                    <th scope="row">Lead Fields to Collect</th>
                     <td>
-                        <input type="text" name="nueva_lead_fields"
-                            value="<?php echo isset($behavior['lead_fields']) ? esc_attr($behavior['lead_fields']) : 'email, phone'; ?>"
-                            class="regular-text" />
-                        <p class="description">What info should the AI try to collect? (e.g., "email, phone, company
-                            name")</p>
+                        <textarea name="nueva_lead_fields" class="large-text" rows="4"
+                            placeholder="Name, Email, Phone, City, Order ID, etc."><?php
+                            echo isset($behavior['lead_fields']) ? esc_textarea($behavior['lead_fields']) : 'Name, Email, Phone';
+                            ?></textarea>
+                        <p class="description">List all fields the AI should collect from the user (comma or new-line
+                            separated). The AI will validate standard formats (Email, Phone) automatically.</p>
                     </td>
                 </tr>
                 <tr>

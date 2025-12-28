@@ -3,7 +3,7 @@ Contributors: nuevadigital
 Tags: ai, chatbot, gemini, google gemini, customer support, lead generation
 Requires at least: 5.8
 Tested up to: 6.4
-Stable tag: 1.0.0
+Stable tag: 1.6.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -16,7 +16,7 @@ Nueva AI Chatbot is a powerful conversational agent for WordPress, driven by Goo
 
 **Key Features:**
 
-*   **AI Integration**: Powered by Google Gemini 1.5 Pro/Flash.
+*   **AI Integration**: Powered by Google Gemini 2.5 Flash/Pro & 3.0 Preview.
 *   **Knowledge Base**: Train the AI with your website content, external URLs, PDF documents, or manual structured data.
 *   **Custom Flows**: Build static decision-tree flows for guided conversations.
 *   **Lead Generation**: Capture user details and sync them to your admin dashboard (Google Sheets & Webhooks coming soon).
@@ -46,6 +46,12 @@ Yes, you can fully customize the primary and secondary colors, as well as the fo
 3.  **Frontend Widget**: The beautiful, responsive chat interface.
 
 == Changelog ==
+
+= 1.6.0 =
+* Added strict email/phone validation in AI logic.
+* Added support for file attachments (images/PDF) in chat.
+* Expanded lead collection fields configuration.
+* UI refinements and bug fixes.
 
 = 1.5.0 =
 *   **New**: "Before Chat" Lead Gate mode.

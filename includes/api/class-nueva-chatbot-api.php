@@ -33,8 +33,52 @@ class Nueva_Chatbot_API
         add_action('wp_ajax_nueva_chat_message', array($this, 'handle_ajax_request'));
         add_action('wp_ajax_nopriv_nueva_chat_message', array($this, 'handle_ajax_request'));
 
+        add_action('wp_ajax_nueva_upload_file', array($this, 'handle_upload_file_request'));
+        add_action('wp_ajax_nopriv_nueva_upload_file', array($this, 'handle_upload_file_request'));
+
         add_action('wp_ajax_nueva_end_chat', array($this, 'handle_end_chat_request'));
         add_action('wp_ajax_nopriv_nueva_end_chat', array($this, 'handle_end_chat_request'));
+    }
+
+    public function handle_upload_file_request()
+    {
+        check_ajax_referer('nueva_chat_nonce', 'nonce');
+
+        if (!isset($_FILES['file'])) {
+            wp_send_json_error('No file uploaded.');
+        }
+
+        $file = $_FILES['file'];
+
+        // Validation: Size (1MB = 1048576 bytes)
+        if ($file['size'] > 1048576) {
+            wp_send_json_error('File too large. Max 1MB.');
+        }
+
+        // Validation: Type
+        $allowed_mimes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+        $file_info = wp_check_filetype($file['name']);
+        if (!in_array($file_info['type'], $allowed_mimes)) {
+            wp_send_json_error('Invalid file type. Only JPG, PNG, WEBP, PDF allowed.');
+        }
+
+        // Upload
+        if (!function_exists('wp_handle_upload')) {
+            require_once(ABSPATH . 'wp-admin/includes/file.php');
+        }
+
+        $upload_overrides = array('test_form' => false);
+        $movefile = wp_handle_upload($file, $upload_overrides);
+
+        if ($movefile && !isset($movefile['error'])) {
+            wp_send_json_success(array(
+                'url' => $movefile['url'],
+                'path' => $movefile['file'], // Absolute path for server-side reading
+                'type' => $movefile['type']
+            ));
+        } else {
+            wp_send_json_error($movefile['error']);
+        }
     }
 
     public function handle_end_chat_request()
@@ -61,13 +105,28 @@ class Nueva_Chatbot_API
         $message = sanitize_text_field($_POST['message']);
         $session_id = isset($_POST['session_id']) ? sanitize_text_field($_POST['session_id']) : '';
 
+        // Attachment Handling
+        $attachment = null;
+        if (isset($_POST['attachment_path']) && !empty($_POST['attachment_path'])) {
+            $attachment = array(
+                'path' => sanitize_text_field($_POST['attachment_path']),
+                'mime' => sanitize_text_field($_POST['attachment_mime']),
+                'url' => isset($_POST['attachment_url']) ? esc_url_raw($_POST['attachment_url']) : ''
+            );
+        }
+
         // Capture Leads
         if ($session_id) {
             $this->capture_lead($session_id, $message);
-            $this->save_message($session_id, 'user', $message);
+            // Modify saved message to include attachment link if present
+            $save_msg = $message;
+            if ($attachment) {
+                $save_msg .= " [Attachment: " . $attachment['url'] . "]";
+            }
+            $this->save_message($session_id, 'user', $save_msg);
         }
 
-        $response = $this->query_gemini($message, $session_id);
+        $response = $this->query_gemini($message, $session_id, $attachment);
 
         // Save Bot Message
         if ($session_id) {
@@ -98,7 +157,7 @@ class Nueva_Chatbot_API
         return new WP_REST_Response(array('reply' => $response), 200);
     }
 
-    private function query_gemini($user_message, $session_id)
+    private function query_gemini($user_message, $session_id, $attachment = null)
     {
         if (empty($this->api_key)) {
             return "Error: API Key is missing. Please contact the administrator.";
@@ -179,7 +238,13 @@ class Nueva_Chatbot_API
             if ($skip_logged_in) {
                 $system_prompt .= "IF User Status is LOGGED IN: Do NOT ask for contact info. Proceed to help.\n";
             }
-            $system_prompt .= "IF User Status is GUEST: Ask for NAME, then EMAIL, then PHONE one by one before answering complex queries.\n";
+            $system_prompt .= "IF User Status is GUEST:\n";
+            $system_prompt .= "- Your GOAL is to collect these fields ONE BY ONE: [$lead_fields].\n";
+            $system_prompt .= "- VALIDATION: Check each input. \n";
+            $system_prompt .= "  * Email MUST look like an email (user@domain). If invalid, say 'That doesn't look right. Please enter a valid email.'\n";
+            $system_prompt .= "  * Phone MUST contain digits. If text only, reject it.\n";
+            $system_prompt .= "- Once all fields are collected, proceed to answer their question.\n";
+            $system_prompt .= "- during this collection phase, do NOT output [SUGGESTIONS].\n";
         }
 
         $system_prompt .= "
@@ -203,12 +268,24 @@ class Nueva_Chatbot_API
 
         $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->api_key}";
 
+        $parts = [];
+        $parts[] = ['text' => $system_prompt . "\n\nUser: " . $user_message];
+
+        // Attach Image/PDF if exists
+        if ($attachment && file_exists($attachment['path'])) {
+            $file_data = base64_encode(file_get_contents($attachment['path']));
+            $parts[] = [
+                'inline_data' => [
+                    'mime_type' => $attachment['mime'],
+                    'data' => $file_data
+                ]
+            ];
+        }
+
         $body = [
             'contents' => [
                 [
-                    'parts' => [
-                        ['text' => $system_prompt . "\n\nUser: " . $user_message]
-                    ]
+                    'parts' => $parts
                 ]
             ]
         ];

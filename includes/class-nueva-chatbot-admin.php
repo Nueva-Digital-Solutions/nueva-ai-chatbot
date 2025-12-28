@@ -237,7 +237,7 @@ class Nueva_Chatbot_Admin
                 'allow_links' => sanitize_text_field($_POST['nueva_allow_links']),
                 'guest_orders' => sanitize_text_field($_POST['nueva_guest_orders']),
                 'kb_strictness' => sanitize_text_field($_POST['nueva_kb_strictness']),
-                'lead_fields' => sanitize_text_field($_POST['nueva_lead_fields']),
+                'lead_fields' => sanitize_textarea_field($_POST['nueva_lead_fields']),
                 'initial_message' => sanitize_textarea_field($_POST['nueva_initial_message']),
                 'enable_handoff' => isset($_POST['nueva_enable_handoff']) ? (bool) $_POST['nueva_enable_handoff'] : false,
                 'default_lang' => sanitize_text_field($_POST['nueva_default_lang']),

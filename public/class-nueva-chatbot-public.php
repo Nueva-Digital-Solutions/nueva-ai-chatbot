@@ -16,7 +16,7 @@ class Nueva_Chatbot_Public
         $this->version = $version;
 
         $defaults = [
-            'general' => ['api_key' => '', 'agent_name' => 'Nueva Agent', 'model' => 'gemini-1.5-pro'],
+            'general' => ['api_key' => '', 'agent_name' => 'Nueva Agent', 'model' => 'gemini-2.5-flash'],
             'appearance' => ['primary_color' => '#0073aa', 'primary_gradient_start' => '#0073aa', 'primary_gradient_end' => '#005a87', 'secondary_color' => '#ffffff', 'font_family' => 'Roboto', 'font_size' => '16', 'position_desktop' => 'right', 'position_mobile' => 'right', 'profile_image' => ''],
             'behavior' => ['tone' => 'professional', 'default_lang' => 'en', 'supported_langs' => 'en'],
             'visibility' => ['include_pages' => [], 'exclude_pages' => []]
