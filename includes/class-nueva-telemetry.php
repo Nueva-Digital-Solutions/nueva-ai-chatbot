@@ -13,7 +13,9 @@ class Nueva_Chatbot_Telemetry
 
     private $plugin_name;
     private $version;
-    private $api_endpoint = 'https://eoubhpf5zwkyyr8.m.pipedream.net';
+    private $api_endpoint = 'https://api.nuevadigital.co.in/wp-json/ntr/v1/collect';
+    // TODO: Replace with your actual Project API Key generated from the Receiver Dashboard
+    private $api_key = 'REPLACE_WITH_YOUR_PROJECT_API_KEY';
 
     public function __construct($plugin_name, $version)
     {
@@ -120,7 +122,10 @@ class Nueva_Chatbot_Telemetry
             'method' => 'POST',
             'timeout' => 10, // Reduced from 45 for better UX on save
             'blocking' => false, // Non-blocking so admin doesn't hang
-            'headers' => array('Content-Type' => 'application/json'),
+            'headers' => array(
+                'Content-Type' => 'application/json',
+                'X-API-KEY' => $this->api_key
+            ),
             'body' => json_encode($stats),
             'cookies' => array()
         ));
