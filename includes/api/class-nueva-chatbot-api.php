@@ -164,15 +164,15 @@ class Nueva_Chatbot_API
         // 3. Call Gemini
         $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->api_key}";
 
-        $body = [
-            'contents' => [
-                [
-                    'parts' => [
-                        ['text' => $system_prompt . "\n\n" . $messages]
-                    ]
-                ]
-            ]
-        ];
+        $body = array(
+            'contents' => array(
+                array(
+                    'parts' => array(
+                        array('text' => $system_prompt . "\n\n" . $messages)
+                    )
+                )
+            )
+        );
 
         $response = wp_remote_post($url, array(
             'body' => json_encode($body),
@@ -188,7 +188,7 @@ class Nueva_Chatbot_API
         if (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
             $cat = trim($data['candidates'][0]['content']['parts'][0]['text']);
             // Normalize
-            $allowed = ['Sales', 'Support', 'Technical', 'General', 'Complaint'];
+            $allowed = array('Sales', 'Support', 'Technical', 'General', 'Complaint');
             foreach ($allowed as $valid) {
                 if (stripos($cat, $valid) !== false)
                     return $valid;
@@ -394,27 +394,27 @@ class Nueva_Chatbot_API
 
         $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->api_key}";
 
-        $parts = [];
-        $parts[] = ['text' => $system_prompt . "\n\nUser: " . $user_message];
+        $parts = array();
+        $parts[] = array('text' => $system_prompt . "\n\nUser: " . $user_message);
 
         // Attach Image/PDF if exists
         if ($attachment && file_exists($attachment['path'])) {
             $file_data = base64_encode(file_get_contents($attachment['path']));
-            $parts[] = [
-                'inline_data' => [
+            $parts[] = array(
+                'inline_data' => array(
                     'mime_type' => $attachment['mime'],
                     'data' => $file_data
-                ]
-            ];
+                )
+            );
         }
 
-        $body = [
-            'contents' => [
-                [
+        $body = array(
+            'contents' => array(
+                array(
                     'parts' => $parts
-                ]
-            ]
-        ];
+                )
+            )
+        );
 
         $args = array(
             'body' => json_encode($body),
@@ -476,7 +476,7 @@ class Nueva_Chatbot_API
     // Helper: Detect Handoff Intent
     private function check_handoff_request($message)
     {
-        $keywords = ['human', 'agent', 'support', 'person', 'talk to someone', 'real person'];
+        $keywords = array('human', 'agent', 'support', 'person', 'talk to someone', 'real person');
         foreach ($keywords as $word) {
             if (stripos($message, $word) !== false) {
                 return true;
@@ -495,16 +495,16 @@ class Nueva_Chatbot_API
 
     private function add_admin_notification($session_id, $message)
     {
-        $notifications = get_option('nueva_admin_notifications', []);
+        $notifications = get_option('nueva_admin_notifications', array());
         if (!is_array($notifications))
-            $notifications = [];
-        $notifications[] = [
+            $notifications = array();
+        $notifications[] = array(
             'type' => 'handoff',
             'session_id' => $session_id,
             'message' => $message,
             'time' => time(),
             'read' => false
-        ];
+        );
         if (count($notifications) > 20)
             array_shift($notifications);
         update_option('nueva_admin_notifications', $notifications);
@@ -522,11 +522,11 @@ class Nueva_Chatbot_API
 
             if (!$existing) {
                 // Create initial lead from WP Account
-                $account_data = [
+                $account_data = array(
                     'name' => $user->display_name,
                     'email' => $user->user_email,
                     'is_logged_in' => true
-                ];
+                );
                 $wpdb->insert($table_name, array('chat_session_id' => $session_id, 'user_data' => json_encode($account_data), 'collected_at' => current_time('mysql'), 'is_synced' => 0));
                 // We return here? No, look for phone in message too.
             }
@@ -540,7 +540,7 @@ class Nueva_Chatbot_API
         // Look for 10-15 digits
         preg_match('/\d{10,15}/', $clean_msg, $phone_matches);
 
-        $data = [];
+        $data = array();
         if (!empty($email_matches[0]))
             $data['email'] = $email_matches[0];
         if (!empty($phone_matches[0]))
@@ -551,7 +551,7 @@ class Nueva_Chatbot_API
             if ($existing) {
                 $existing_data = json_decode($existing->user_data, true);
                 if (!is_array($existing_data))
-                    $existing_data = [];
+                    $existing_data = array();
                 $new_data = array_merge($existing_data, $data);
                 $wpdb->update($table_name, array('user_data' => json_encode($new_data)), array('chat_session_id' => $session_id));
             } else {
@@ -641,7 +641,7 @@ class Nueva_Chatbot_API
         if (!empty($biz_data['locations']) && is_array($biz_data['locations'])) {
             $info .= "\n[Locations]\n";
             foreach ($biz_data['locations'] as $loc) {
-                $parts = [];
+                $parts = array();
                 if (!empty($loc['addr1']))
                     $parts[] = $loc['addr1'];
                 if (!empty($loc['addr2']))
@@ -692,7 +692,7 @@ class Nueva_Chatbot_API
         }
 
         if (!empty($biz_data['founders']) && is_array($biz_data['founders'])) {
-            $names = [];
+            $names = array();
             foreach ($biz_data['founders'] as $f) {
                 if (!empty($f['name']))
                     $names[] = $f['name'];
@@ -703,7 +703,7 @@ class Nueva_Chatbot_API
         }
 
         if (!empty($biz_data['service_areas']) && is_array($biz_data['service_areas'])) {
-            $areas = [];
+            $areas = array();
             foreach ($biz_data['service_areas'] as $a) {
                 if (!empty($a['name']))
                     $areas[] = $a['name'];
@@ -724,7 +724,7 @@ class Nueva_Chatbot_API
 
         // 1. Tokenize query
         $clean_query = preg_replace('/[^\p{L}\p{N}\s]/u', '', strtolower($query));
-        $stop_words = ['the', 'is', 'in', 'at', 'of', 'on', 'and', 'a', 'to', 'it', 'for', 'or', 'an', 'as', 'by', 'with', 'from', 'that', 'which', 'who', 'what', 'where', 'when', 'why', 'how', 'can', 'could', 'would', 'should', 'do', 'does', 'did'];
+        $stop_words = array('the', 'is', 'in', 'at', 'of', 'on', 'and', 'a', 'to', 'it', 'for', 'or', 'an', 'as', 'by', 'with', 'from', 'that', 'which', 'who', 'what', 'where', 'when', 'why', 'how', 'can', 'could', 'would', 'should', 'do', 'does', 'did');
         $words = explode(' ', $clean_query);
         $keywords = array_diff($words, $stop_words);
         $keywords = array_filter($keywords);
@@ -733,8 +733,8 @@ class Nueva_Chatbot_API
             return "";
 
         // 2. Build Scoring Query
-        $likes = [];
-        $params = [];
+        $likes = array();
+        $params = array();
         foreach ($keywords as $word) {
             $likes[] = "(content LIKE %s)";
             $params[] = '%' . $wpdb->esc_like($word) . '%';
@@ -859,15 +859,15 @@ class Nueva_Chatbot_API
 
         $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->api_key}";
 
-        $body = [
-            'contents' => [
-                [
-                    'parts' => [
-                        ['text' => $system_prompt]
-                    ]
-                ]
-            ]
-        ];
+        $body = array(
+            'contents' => array(
+                array(
+                    'parts' => array(
+                        array('text' => $system_prompt)
+                    )
+                )
+            )
+        );
 
         $args = array(
             'body' => json_encode($body),

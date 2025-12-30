@@ -15,14 +15,14 @@ class Nueva_Chatbot_Public
         $this->plugin_name = $plugin_name;
         $this->version = $version;
 
-        $defaults = [
-            'general' => ['api_key' => '', 'agent_name' => 'Nueva Agent', 'model' => 'gemini-2.5-flash'],
-            'appearance' => ['primary_color' => '#0073aa', 'primary_gradient_start' => '#0073aa', 'primary_gradient_end' => '#005a87', 'secondary_color' => '#ffffff', 'font_family' => 'Roboto', 'font_size' => '16', 'position_desktop' => 'right', 'position_mobile' => 'right', 'profile_image' => ''],
-            'behavior' => ['tone' => 'professional', 'default_lang' => 'en', 'supported_langs' => 'en'],
-            'visibility' => ['include_pages' => [], 'exclude_pages' => []]
-        ];
+        $defaults = array(
+            'general' => array('api_key' => '', 'agent_name' => 'Nueva Agent', 'model' => 'gemini-2.5-flash'),
+            'appearance' => array('primary_color' => '#0073aa', 'primary_gradient_start' => '#0073aa', 'primary_gradient_end' => '#005a87', 'secondary_color' => '#ffffff', 'font_family' => 'Roboto', 'font_size' => '16', 'position_desktop' => 'right', 'position_mobile' => 'right', 'profile_image' => ''),
+            'behavior' => array('tone' => 'professional', 'default_lang' => 'en', 'supported_langs' => 'en'),
+            'visibility' => array('include_pages' => array(), 'exclude_pages' => array())
+        );
 
-        $options = get_option('nueva_chat_options', []);
+        $options = get_option('nueva_chat_options', array());
 
         // Deep merge logic simplified for this structure
         $this->options = $defaults;
