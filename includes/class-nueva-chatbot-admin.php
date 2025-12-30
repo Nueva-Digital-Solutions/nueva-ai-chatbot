@@ -293,12 +293,12 @@ class Nueva_Chatbot_Admin
                 'office_timing' => sanitize_text_field($_POST['nueva_office_timing']),
                 'price_range' => sanitize_text_field($_POST['nueva_price_range']),
                 // Repeaters (using helper to sanitize array of arrays)
-                'locations' => isset($_POST['nueva_locations']) ? $this->sanitize_recursive($_POST['nueva_locations']) : [],
-                'mobile_numbers' => isset($_POST['nueva_mobile_numbers']) ? $this->sanitize_recursive($_POST['nueva_mobile_numbers']) : [],
-                'emails' => isset($_POST['nueva_emails']) ? $this->sanitize_recursive($_POST['nueva_emails']) : [],
-                'social_media' => isset($_POST['nueva_social_media']) ? $this->sanitize_recursive($_POST['nueva_social_media']) : [],
-                'founders' => isset($_POST['nueva_founders']) ? $this->sanitize_recursive($_POST['nueva_founders']) : [],
-                'service_areas' => isset($_POST['nueva_service_areas']) ? $this->sanitize_recursive($_POST['nueva_service_areas']) : [],
+                'locations' => isset($_POST['nueva_locations']) ? $this->sanitize_recursive($_POST['nueva_locations']) : array(),
+                'mobile_numbers' => isset($_POST['nueva_mobile_numbers']) ? $this->sanitize_recursive($_POST['nueva_mobile_numbers']) : array(),
+                'emails' => isset($_POST['nueva_emails']) ? $this->sanitize_recursive($_POST['nueva_emails']) : array(),
+                'social_media' => isset($_POST['nueva_social_media']) ? $this->sanitize_recursive($_POST['nueva_social_media']) : array(),
+                'founders' => isset($_POST['nueva_founders']) ? $this->sanitize_recursive($_POST['nueva_founders']) : array(),
+                'service_areas' => isset($_POST['nueva_service_areas']) ? $this->sanitize_recursive($_POST['nueva_service_areas']) : array(),
             ),
             'appearance' => array(
                 'primary_color' => sanitize_hex_color($_POST['nueva_primary_color']),
@@ -330,11 +330,23 @@ class Nueva_Chatbot_Admin
                 'supported_langs' => sanitize_text_field($_POST['nueva_supported_langs']),
             ),
             'visibility' => array(
-                'exclude_pages' => isset($_POST['nueva_exclude_pages']) ? array_map('intval', $_POST['nueva_exclude_pages']) : [],
+                'exclude_pages' => isset($_POST['nueva_exclude_pages']) ? array_map('intval', $_POST['nueva_exclude_pages']) : array(),
             )
         );
         update_option('nueva_chat_options', $options);
         echo '<div class="notice notice-success is-dismissible"><p>Settings saved successfully.</p></div>';
+    }
+
+    private function sanitize_recursive($data)
+    {
+        if (is_array($data)) {
+            foreach ($data as $key => $value) {
+                $data[$key] = $this->sanitize_recursive($value);
+            }
+            return $data;
+        } else {
+            return sanitize_text_field($data);
+        }
     }
 
     public function ajax_kb_scan_list()
