@@ -19,7 +19,7 @@ if (isset($_POST['nueva_kb_action']) && check_admin_referer('nueva_kb_verify')) 
     // Delete Item
     if (isset($_POST['nueva_kb_action']) && $_POST['nueva_kb_action'] == 'delete_item') {
         $id = intval($_POST['item_id']);
-        $wpdb->delete($table_name, ['id' => $id]);
+        $wpdb->delete($table_name, array('id' => $id));
         echo '<div class="notice notice-success"><p>Item deleted successfully.</p></div>';
     }
 
@@ -27,7 +27,7 @@ if (isset($_POST['nueva_kb_action']) && check_admin_referer('nueva_kb_verify')) 
     if (isset($_POST['nueva_kb_action']) && $_POST['nueva_kb_action'] == 'edit_item') {
         $id = intval($_POST['edit_item_id']);
         $content = wp_kses_post($_POST['edit_content']);
-        $wpdb->update($table_name, ['content' => $content], ['id' => $id]);
+        $wpdb->update($table_name, array('content' => $content), array('id' => $id));
         echo '<div class="notice notice-success"><p>Item updated successfully.</p></div>';
     }
 
@@ -271,7 +271,7 @@ $items = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
                         also trained into the AI.</p>
 
                     <?php
-                    $faq_data = get_option('nueva_faq_data', []);
+                    $faq_data = get_option('nueva_faq_data', array());
                     $faqs = isset($faq_data['items']) ? $faq_data['items'] : [];
                     ?>
 

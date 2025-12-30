@@ -1,13 +1,13 @@
 <?php
-$options = get_option('nueva_chat_options', [
-    'general' => ['api_key' => '', 'agent_name' => 'Nueva Agent', 'model' => 'gemini-2.5-flash'],
-    'appearance' => ['primary_color' => '#0073aa', 'secondary_color' => '#ffffff', 'font_family' => 'Roboto', 'font_size' => '16', 'position_desktop' => 'right', 'position_mobile' => 'right', 'profile_image' => ''],
-    'behavior' => ['tone' => 'professional', 'default_lang' => 'en', 'supported_langs' => 'en'],
-    'visibility' => ['include_pages' => [], 'exclude_pages' => []]
-]);
+$options = get_option('nueva_chat_options', array(
+    'general' => array('api_key' => '', 'agent_name' => 'Nueva Agent', 'model' => 'gemini-2.5-flash'),
+    'appearance' => array('primary_color' => '#0073aa', 'secondary_color' => '#ffffff', 'font_family' => 'Roboto', 'font_size' => '16', 'position_desktop' => 'right', 'position_mobile' => 'right', 'profile_image' => ''),
+    'behavior' => array('tone' => 'professional', 'default_lang' => 'en', 'supported_langs' => 'en'),
+    'visibility' => array('include_pages' => array(), 'exclude_pages' => array())
+));
 
 $general = $options['general'];
-$business = isset($options['business_info']) ? $options['business_info'] : [];
+$business = isset($options['business_info']) ? $options['business_info'] : array();
 $appearance = $options['appearance'];
 $behavior = $options['behavior'];
 $visibility = $options['visibility'];
