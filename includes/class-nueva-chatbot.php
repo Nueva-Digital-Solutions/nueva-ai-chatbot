@@ -80,7 +80,19 @@ class Nueva_Chatbot
 
     public function run()
     {
+        $this->check_version();
         $this->loader->run();
+    }
+
+    private function check_version()
+    {
+        $installed_version = get_option('nueva_ai_chatbot_version');
+
+        if (version_compare($installed_version, $this->version, '<')) {
+            require_once plugin_dir_path(__FILE__) . 'class-nueva-chatbot-activator.php';
+            Nueva_Chatbot_Activator::activate();
+            update_option('nueva_ai_chatbot_version', $this->version);
+        }
     }
 
     public function get_plugin_name()
