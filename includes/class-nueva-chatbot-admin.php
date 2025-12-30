@@ -108,19 +108,7 @@ class Nueva_Chatbot_Admin
             array($this, 'display_leads_page')
         );
 
-        add_submenu_page(
-            'nueva-ai-chat',
-            'Chat History',
-            'Chat History',
-            'manage_options',
-            'nueva-ai-history',
-            'display_history_page' // Fixed string callback for older WP versions sanity or direct array
-            // Assuming array($this, ...) format is consistent, I'll stick to replacing the block if needed or just appending.
-            // Wait, the previous code uses array($this, ...). I should match that.
-        );
 
-        // Fix: Previous implementation was closing the method too early or I'm inserting into the list.
-        // Let's rewrite the Chat History block and ADD the new block cleanly.
 
         add_submenu_page(
             'nueva-ai-chat',
@@ -139,12 +127,22 @@ class Nueva_Chatbot_Admin
             'nueva-ai-realtime',
             array($this, 'display_realtime_page')
         );
+
+        add_submenu_page(
+            'nueva-ai-chat',
+            'Premium Features',
+            'Premium Features',
+            'manage_options',
+            'nueva-ai-premium',
+            array($this, 'display_premium_page')
+        );
     }
 
     public function display_dashboard_page()
     {
         require_once plugin_dir_path(__FILE__) . '../admin/partials/nueva-ai-chatbot-dashboard.php';
     }
+
 
     public function display_feedback_page()
     {
@@ -187,11 +185,20 @@ class Nueva_Chatbot_Admin
         require_once plugin_dir_path(__FILE__) . '../admin/partials/nueva-ai-chatbot-realtime-display.php';
     }
 
+    public function display_premium_page()
+    {
+        require_once plugin_dir_path(__FILE__) . '../admin/partials/nueva-ai-chatbot-premium-display.php';
+    }
+
     public function define_admin_hooks()
     {
         // ... existing hooks ...
         add_action('wp_ajax_nueva_check_notifications', array($this, 'ajax_check_notifications'));
         add_action('wp_ajax_nueva_dismiss_notification', array($this, 'ajax_dismiss_notification'));
+
+        // KB Scan Hooks
+        add_action('wp_ajax_nueva_kb_scan_list', array($this, 'ajax_kb_scan_list'));
+        add_action('wp_ajax_nueva_kb_scan_import', array($this, 'ajax_kb_scan_import'));
 
         // CSV Export
         add_action('admin_post_nueva_export_leads', array($this, 'export_leads_csv'));
@@ -313,4 +320,99 @@ class Nueva_Chatbot_Admin
         update_option('nueva_chat_options', $options);
         echo '<div class="notice notice-success is-dismissible"><p>Settings saved successfully.</p></div>';
     }
+
+    public function ajax_kb_scan_list()
+    {
+        check_ajax_referer('nueva_admin_nonce', 'nonce');
+
+        $post_types = get_post_types(array('public' => true), 'names');
+        unset($post_types['attachment'], $post_types['revision'], $post_types['nav_menu_item']);
+
+        $args = [
+            'post_type' => array_values($post_types),
+            'posts_per_page' => -1,
+            'post_status' => 'publish',
+            'orderby' => 'title',
+            'order' => 'ASC'
+        ];
+
+        $query = new WP_Query($args);
+        $results = [];
+
+        if ($query->have_posts()) {
+            while ($query->have_posts()) {
+                $query->the_post();
+                $results[] = [
+                    'id' => get_the_ID(),
+                    'title' => get_the_title(),
+                    'type' => get_post_type(),
+                    'date' => get_the_date('Y-m-d'),
+                    'link' => get_permalink()
+                ];
+            }
+            wp_reset_postdata();
+        }
+
+        wp_send_json_success($results);
+    }
+
+    public function ajax_kb_scan_import()
+    {
+        check_ajax_referer('nueva_admin_nonce', 'nonce');
+
+        if (!isset($_POST['ids']) || !is_array($_POST['ids'])) {
+            wp_send_json_error('No items selected.');
+        }
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'bua_knowledge_base';
+        $ids = array_map('intval', $_POST['ids']);
+        $count = 0;
+
+        foreach ($ids as $post_id) {
+            $post = get_post($post_id);
+            if (!$post)
+                continue;
+
+            $raw_content = $post->post_content; // Raw content first
+            // Strip tags but keep some structure if possible? standard strip_tags is fine for now as per previous logic.
+            $clean_text = strip_tags($raw_content);
+            $clean_text = preg_replace('/\s+/', ' ', $clean_text);
+            $clean_text = trim($clean_text);
+
+            // Enhance Product Data
+            if ($post->post_type == 'product' && function_exists('wc_get_product')) {
+                $product = wc_get_product($post_id);
+                if ($product) {
+                    $price = $product->get_price();
+                    $sku = $product->get_sku();
+                    $stock = $product->is_in_stock() ? 'In Stock' : 'Out of Stock';
+                    $cats = wc_get_product_category_list($product->get_id());
+                    $clean_text = "Product: " . $post->post_title . "\nPrice: " . $price . "\nSKU: " . $sku . "\nAvailability: " . $stock . "\nCategories: " . strip_tags($cats) . "\nDescription: " . $clean_text;
+                }
+            } else {
+                // Prepend Title for context on standard posts
+                $clean_text = "Title: " . $post->post_title . "\nType: " . $post->post_type . "\nContent: " . $clean_text;
+            }
+
+            if (!empty($clean_text)) {
+                // Check duplicate source
+                $link = get_permalink($post_id);
+                $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table_name WHERE source_ref = %s", $link));
+
+                if (!$exists) {
+                    $wpdb->insert($table_name, [
+                        'type' => 'wp_' . $post->post_type,
+                        'source_ref' => $link,
+                        'content' => substr($clean_text, 0, 10000), // Limit size safer
+                        'created_at' => current_time('mysql')
+                    ]);
+                    $count++;
+                }
+            }
+        }
+
+        wp_send_json_success(['added' => $count]);
+    }
 }
+

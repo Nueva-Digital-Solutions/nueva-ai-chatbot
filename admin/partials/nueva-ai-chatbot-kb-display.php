@@ -35,42 +35,52 @@ if (isset($_POST['nueva_kb_action']) && check_admin_referer('nueva_kb_verify')) 
     if ($_POST['nueva_kb_action'] == 'add_url') {
         $url = esc_url_raw($_POST['kb_url']);
 
-        // 1. Fetch URL
-        $response = wp_remote_get($url, array('timeout' => 30));
+        // 1. Validation: Local Domain Only
+        $home_host = parse_url(home_url(), PHP_URL_HOST);
+        $url_host = parse_url($url, PHP_URL_HOST);
 
-        if (is_wp_error($response)) {
-            echo '<div class="notice notice-error"><p>Failed to fetch URL: ' . $response->get_error_message() . '</p></div>';
+        // Strip www. for looser matching if needed, but strict is safer.
+        // Let's do a case-insensitive check
+        if (strcasecmp($home_host, $url_host) !== 0) {
+            echo '<div class="notice notice-error"><p>External URLs are not allowed. You can only add URLs from your own domain (' . esc_html($home_host) . ').</p></div>';
         } else {
-            $html = wp_remote_retrieve_body($response);
+            // 2. Fetch URL
+            $response = wp_remote_get($url, array('timeout' => 30));
 
-            // 2. Extract Text
-            if (!empty($html)) {
-                $dom = new DOMDocument();
-                libxml_use_internal_errors(true);
-                $dom->loadHTML($html);
-                libxml_clear_errors();
-
-                $xpath = new DOMXPath($dom);
-                // Remove scripts and styles
-                foreach ($xpath->query('//script|//style|//noscript') as $node) {
-                    $node->parentNode->removeChild($node);
-                }
-
-                $content = trim($dom->textContent);
-                // Clean extra whitespace
-                $content = preg_replace('/\s+/', ' ', $content);
-                // Limit size
-                $content = substr($content, 0, 5000);
-
-                $wpdb->insert($table_name, [
-                    'type' => 'url',
-                    'source_ref' => $url,
-                    'content' => $content,
-                    'created_at' => current_time('mysql')
-                ]);
-                echo '<div class="notice notice-success"><p>URL scraped and saved successfully.</p></div>';
+            if (is_wp_error($response)) {
+                echo '<div class="notice notice-error"><p>Failed to fetch URL: ' . $response->get_error_message() . '</p></div>';
             } else {
-                echo '<div class="notice notice-warning"><p>URL returned empty content.</p></div>';
+                $html = wp_remote_retrieve_body($response);
+
+                // 2. Extract Text
+                if (!empty($html)) {
+                    $dom = new DOMDocument();
+                    libxml_use_internal_errors(true);
+                    $dom->loadHTML($html);
+                    libxml_clear_errors();
+
+                    $xpath = new DOMXPath($dom);
+                    // Remove scripts and styles
+                    foreach ($xpath->query('//script|//style|//noscript') as $node) {
+                        $node->parentNode->removeChild($node);
+                    }
+
+                    $content = trim($dom->textContent);
+                    // Clean extra whitespace
+                    $content = preg_replace('/\s+/', ' ', $content);
+                    // Limit size
+                    $content = substr($content, 0, 5000);
+
+                    $wpdb->insert($table_name, [
+                        'type' => 'url',
+                        'source_ref' => $url,
+                        'content' => $content,
+                        'created_at' => current_time('mysql')
+                    ]);
+                    echo '<div class="notice notice-success"><p>URL scraped and saved successfully.</p></div>';
+                } else {
+                    echo '<div class="notice notice-warning"><p>URL returned empty content.</p></div>';
+                }
             }
         }
     }
@@ -96,63 +106,7 @@ if (isset($_POST['nueva_kb_action']) && check_admin_referer('nueva_kb_verify')) 
         echo '<div class="notice notice-success"><p>Manual entries added.</p></div>';
     }
 
-    // Complete Site Scan (Pages, Posts, Products)
-    if ($_POST['nueva_kb_action'] == 'scan_site') {
-        // Get all public post types including custom ones (WooCommerce products are 'product')
-        $post_types = get_post_types(array('public' => true), 'names');
-        // Exclude attachment, revision, nav_menu_item
-        unset($post_types['attachment'], $post_types['revision'], $post_types['nav_menu_item']);
 
-        $args = [
-            'post_type' => array_values($post_types),
-            'posts_per_page' => -1,
-            'post_status' => 'publish'
-        ];
-
-        $query = new WP_Query($args);
-        $count = 0;
-
-        if ($query->have_posts()) {
-            while ($query->have_posts()) {
-                $query->the_post();
-
-                // Get Content
-                $raw_content = get_the_content();
-                $clean_text = strip_tags($raw_content);
-                $clean_text = preg_replace('/\s+/', ' ', $clean_text);
-
-                // For Products, maybe add Price/Title explicitly
-                // Enhance Product Data
-                if (get_post_type() == 'product' && function_exists('wc_get_product')) {
-                    $product = wc_get_product(get_the_ID());
-                    if ($product) {
-                        $price = $product->get_price();
-                        $sku = $product->get_sku();
-                        $stock = $product->is_in_stock() ? 'In Stock' : 'Out of Stock';
-                        $cats = wc_get_product_category_list($product->get_id());
-                        $clean_text = "Product: " . get_the_title() . "\nPrice: " . $price . "\nSKU: " . $sku . "\nAvailability: " . $stock . "\nCategories: " . strip_tags($cats) . "\nDescription: " . $clean_text;
-                    }
-                }
-
-                if (!empty($clean_text)) {
-                    // Check duplicate source
-                    $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table_name WHERE source_ref = %s", get_the_permalink()));
-
-                    if (!$exists) {
-                        $wpdb->insert($table_name, [
-                            'type' => 'wp_' . get_post_type(),
-                            'source_ref' => get_the_permalink(),
-                            'content' => trim($clean_text),
-                            'created_at' => current_time('mysql')
-                        ]);
-                        $count++;
-                    }
-                }
-            }
-            wp_reset_postdata();
-        }
-        echo '<div class="notice notice-success"><p>Scan Complete. Added ' . $count . ' new items from ' . implode(', ', $post_types) . '.</p></div>';
-    }
 }
 
 // Fetch Items
@@ -168,6 +122,7 @@ $items = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
         <a href="#tab-add-url" class="nav-tab">Add URL</a>
         <a href="#tab-manual" class="nav-tab">Manual Entry</a>
         <a href="#tab-scan" class="nav-tab">Scan Website</a>
+        <a href="#tab-faq" class="nav-tab">FAQ Builder</a>
     </h2>
 
     <div id="tab-list" class="tab-content">
@@ -264,20 +219,135 @@ $items = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
         </form>
     </div>
 
-    <!-- Scan Site -->
+    <!-- Scan Site (New Selective UI) -->
     <div id="tab-scan" class="tab-content" style="display:none;">
-        <form method="post">
-            <?php wp_nonce_field('nueva_kb_verify'); ?>
-            <input type="hidden" name="nueva_kb_action" value="scan_site">
-            <p>This will scan all published Pages and Posts and add their text content to the knowledge base.</p>
-            <input type="submit" class="button button-primary" value="Start Scan">
-        </form>
+        <div class="scan-controls" style="margin-bottom: 20px;">
+            <p>Scan your entire website for Pages, Posts, Products, and other content types. You can review the list and
+                select exactly what to add to the knowledge base.</p>
+            <button type="button" class="button button-primary" id="btn-start-scan">Start Website Scan</button>
+            <span id="scan-spinner" class="spinner" style="float:none; margin-left: 5px;"></span>
+        </div>
+
+        <div id="scan-results-container" style="display:none;">
+            <div class="tablenav top">
+                <div class="alignleft actions">
+                    <button type="button" class="button button-primary" id="btn-import-selected">Import
+                        Selected</button>
+                    <span id="import-spinner" class="spinner" style="float:none; margin-left: 5px;"></span>
+                </div>
+                <div class="alignleft actions">
+                    <label><input type="checkbox" id="cb-select-all-scan"> Select All</label>
+                </div>
+            </div>
+
+            <table class="wp-list-table widefat fixed striped">
+                <thead>
+                    <tr>
+                        <th class="check-column"><input type="checkbox" id="cb-select-all-header"></th>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>Date Published</th>
+                        <th>Link</th>
+                    </tr>
+                </thead>
+                <tbody id="scan-results-body">
+                    <!-- Results injected here -->
+                </tbody>
+            </table>
+        </div>
     </div>
 
+    <!-- FAQ Builder Tab -->
+    <div id="tab-faq" class="tab-content" style="display:none;">
+        <form method="post">
+            <?php wp_nonce_field('nueva_kb_verify'); ?>
+            <input type="hidden" name="nueva_kb_action" value="save_faq_builder">
+
+            <div style="display:flex; gap:20px;">
+                <!-- FAQ Questions Repeater -->
+                <div style="flex:2;">
+                    <h3>FAQ Questions</h3>
+                    <p>Add questions and answers. These will be displayed via shortcode <code>[nueva_faq]</code> and
+                        also trained into the AI.</p>
+
+                    <?php
+                    $faq_data = get_option('nueva_faq_data', []);
+                    $faqs = isset($faq_data['items']) ? $faq_data['items'] : [];
+                    ?>
+
+                    <div id="faq-repeater">
+                        <?php if (!empty($faqs)): ?>
+                            <?php foreach ($faqs as $index => $faq): ?>
+                                <div class="faq-row"
+                                    style="background:#fff; padding:15px; margin-bottom:15px; border:1px solid #ccd0d4; border-left: 4px solid #2271b1;">
+                                    <p>
+                                        <label><strong>Question</strong></label><br>
+                                        <input type="text" name="faq_question[]" class="widefat"
+                                            value="<?php echo esc_attr($faq['q']); ?>" required>
+                                    </p>
+                                    <p>
+                                        <label><strong>Answer</strong></label><br>
+                                        <textarea name="faq_answer[]" class="widefat" rows="3"
+                                            required><?php echo esc_textarea($faq['a']); ?></textarea>
+                                    </p>
+                                    <button type="button" class="button button-link-delete remove-faq-row">Remove
+                                        Question</button>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+
+                    <button type="button" class="button" id="add-faq-row">+ Add Question</button>
+                </div>
+
+                <!-- Styling Sidebar -->
+                <div style="flex:1; background:#f0f0f1; padding:20px; border-radius:5px; height:fit-content;">
+                    <h3>Design & Styling</h3>
+                    <p>Customize how the FAQ accordion looks on your site.</p>
+
+                    <?php $style = isset($faq_data['style']) ? $faq_data['style'] : []; ?>
+
+                    <p>
+                        <label><strong>Title Font Color</strong></label><br>
+                        <input type="text" name="style_title_color" class="color-picker"
+                            value="<?php echo esc_attr(isset($style['title_color']) ? $style['title_color'] : '#333333'); ?>">
+                    </p>
+                    <p>
+                        <label><strong>Title Font Size (px)</strong></label><br>
+                        <input type="number" name="style_title_size" class="small-text"
+                            value="<?php echo esc_attr(isset($style['title_size']) ? $style['title_size'] : '16'); ?>">
+                        px
+                    </p>
+
+                    <hr>
+
+                    <p>
+                        <label><strong>Background Color</strong></label><br>
+                        <input type="text" name="style_bg_color" class="color-picker"
+                            value="<?php echo esc_attr(isset($style['bg_color']) ? $style['bg_color'] : '#ffffff'); ?>">
+                    </p>
+                    <p>
+                        <label><strong>Accordion Padding (px)</strong></label><br>
+                        <input type="number" name="style_padding" class="small-text"
+                            value="<?php echo esc_attr(isset($style['padding']) ? $style['padding'] : '15'); ?>"> px
+                    </p>
+                    <p>
+                        <label><strong>Item Spacing (px)</strong></label><br>
+                        <input type="number" name="style_spacing" class="small-text"
+                            value="<?php echo esc_attr(isset($style['spacing']) ? $style['spacing'] : '10'); ?>"> px
+                    </p>
+                </div>
+            </div>
+
+            <hr>
+            <input type="submit" class="button button-primary button-large" value="Save FAQ & Sync to AI">
+        </form>
+    </div>
 </div>
 
 <script>
     jQuery(document).ready(function ($) {
+        // Tab Switching
         $('.nav-tab').click(function (e) {
             e.preventDefault();
             $('.nav-tab').removeClass('nav-tab-active');
@@ -287,7 +357,120 @@ $items = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
             $(activeTab).show();
         });
 
+        // --- SCAN LOGIC ---
+
+        // 1. Fetch List
+        $('#btn-start-scan').click(function () {
+            var $btn = $(this);
+            var $spinner = $('#scan-spinner');
+
+            $btn.prop('disabled', true);
+            $spinner.addClass('is-active');
+            $('#scan-results-container').hide();
+            $('#scan-results-body').empty();
+
+            $.ajax({
+                url: nueva_admin.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'nueva_kb_scan_list',
+                    nonce: nueva_admin.nonce
+                },
+                success: function (res) {
+                    $btn.prop('disabled', false);
+                    $spinner.removeClass('is-active');
+
+                    if (res.success) {
+                        var items = res.data;
+                        if (items.length === 0) {
+                            alert('No public content found to scan.');
+                            return;
+                        }
+
+                        // Render List
+                        items.forEach(function (item) {
+                            var row = '<tr>' +
+                                '<th class="check-column"><input type="checkbox" name="scan_items[]" value="' + item.id + '"></th>' +
+                                '<td><strong>' + item.title + '</strong></td>' +
+                                '<td>' + item.type + '</td>' +
+                                '<td>' + item.date + '</td>' +
+                                '<td><a href="' + item.link + '" target="_blank">View</a></td>' +
+                                '</tr>';
+                            $('#scan-results-body').append(row);
+                        });
+
+                        $('#scan-results-container').fadeIn();
+
+                    } else {
+                        alert('Error scanning site: ' + res.data);
+                    }
+                },
+                error: function () {
+                    $btn.prop('disabled', false);
+                    $spinner.removeClass('is-active');
+                    alert('Network error while scanning.');
+                }
+            });
+        });
+
+        // 2. Select All
+        $('#cb-select-all-scan, #cb-select-all-header').change(function () {
+            var checked = $(this).is(':checked');
+            $('input[name="scan_items[]"]').prop('checked', checked);
+            // Sync both triggers
+            $('#cb-select-all-scan, #cb-select-all-header').prop('checked', checked);
+        });
+
+        // 3. Import Selected
+        $('#btn-import-selected').click(function () {
+            var selectedIds = [];
+            $('input[name="scan_items[]"]:checked').each(function () {
+                selectedIds.push($(this).val());
+            });
+
+            if (selectedIds.length === 0) {
+                alert('Please select at least one item to import.');
+                return;
+            }
+
+            if (!confirm('Import ' + selectedIds.length + ' items to Knowledge Base?')) return;
+
+            var $btn = $(this);
+            var $spinner = $('#import-spinner');
+            $btn.prop('disabled', true);
+            $spinner.addClass('is-active');
+
+            $.ajax({
+                url: nueva_admin.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'nueva_kb_scan_import',
+                    nonce: nueva_admin.nonce,
+                    ids: selectedIds
+                },
+                success: function (res) {
+                    $btn.prop('disabled', false);
+                    $spinner.removeClass('is-active');
+                    if (res.success) {
+                        alert('Success! Added ' + res.data.added + ' items to the Knowledge Base. Refreshing page...');
+                        location.reload();
+                    } else {
+                        alert('Error importing: ' + res.data);
+                    }
+                },
+                error: function () {
+                    $btn.prop('disabled', false);
+                    $spinner.removeClass('is-active');
+                    alert('Network error while importing.');
+                }
+            });
+        });
+
+        // --- OLD JS LOGIC ---
+
+        // Repeater
         $('#add-repeater-row').click(function () {
+            // ... existing repeater logic ...
             var row = '<div class="manual-row" style="background:#f9f9f9; padding:10px; margin-bottom:10px; border:1px solid #e5e5e5;">' +
                 '<p><label>Heading</label><br><input type="text" name="manual_heading[]" class="widefat"></p>' +
                 '<p><label>Content</label><br><textarea name="manual_paragraph[]" class="widefat" rows="3"></textarea></p>' +
@@ -313,5 +496,26 @@ $items = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
         $('#close-edit-modal').click(function () {
             $('#nueva-kb-edit-modal').fadeOut();
         });
+
+        // --- FAQ BUILDER ---
+        $('#add-faq-row').click(function () {
+            var row = '<div class="faq-row" style="background:#fff; padding:15px; margin-bottom:15px; border:1px solid #ccd0d4; border-left: 4px solid #2271b1;">' +
+                '<p><label><strong>Question</strong></label><br><input type="text" name="faq_question[]" class="widefat" required></p>' +
+                '<p><label><strong>Answer</strong></label><br><textarea name="faq_answer[]" class="widefat" rows="3" required></textarea></p>' +
+                '<button type="button" class="button button-link-delete remove-faq-row">Remove Question</button>' +
+                '</div>';
+            $('#faq-repeater').append(row);
+        });
+
+        $(document).on('click', '.remove-faq-row', function () {
+            if (confirm('Remove this question?')) {
+                $(this).closest('.faq-row').remove();
+            }
+        });
+
+        // Init Color Picker
+        if ($.fn.wpColorPicker) {
+            $('.color-picker').wpColorPicker();
+        }
     });
 </script>

@@ -76,6 +76,9 @@ class Nueva_Chatbot
 
         $this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'enqueue_styles');
         $this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'enqueue_scripts');
+
+        // FAQ Shortcode
+        $this->loader->add_shortcode('nueva_faq', $plugin_public, 'render_faq_shortcode');
     }
 
     public function run()
