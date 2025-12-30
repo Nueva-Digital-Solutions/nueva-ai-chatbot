@@ -284,6 +284,22 @@ class Nueva_Chatbot_Admin
                 'model' => sanitize_text_field($_POST['nueva_model']),
                 'model_custom' => sanitize_text_field($_POST['nueva_model_custom']),
             ),
+            'business_info' => array(
+                'business_name' => sanitize_text_field($_POST['nueva_business_name']),
+                'legal_name' => sanitize_text_field($_POST['nueva_legal_name']),
+                'contact_link' => esc_url_raw($_POST['nueva_contact_link']),
+                'founding_date' => sanitize_text_field($_POST['nueva_founding_date']),
+                'gst' => sanitize_text_field($_POST['nueva_gst']),
+                'office_timing' => sanitize_text_field($_POST['nueva_office_timing']),
+                'price_range' => sanitize_text_field($_POST['nueva_price_range']),
+                // Repeaters (using helper to sanitize array of arrays)
+                'locations' => isset($_POST['nueva_locations']) ? $this->sanitize_recursive($_POST['nueva_locations']) : [],
+                'mobile_numbers' => isset($_POST['nueva_mobile_numbers']) ? $this->sanitize_recursive($_POST['nueva_mobile_numbers']) : [],
+                'emails' => isset($_POST['nueva_emails']) ? $this->sanitize_recursive($_POST['nueva_emails']) : [],
+                'social_media' => isset($_POST['nueva_social_media']) ? $this->sanitize_recursive($_POST['nueva_social_media']) : [],
+                'founders' => isset($_POST['nueva_founders']) ? $this->sanitize_recursive($_POST['nueva_founders']) : [],
+                'service_areas' => isset($_POST['nueva_service_areas']) ? $this->sanitize_recursive($_POST['nueva_service_areas']) : [],
+            ),
             'appearance' => array(
                 'primary_color' => sanitize_hex_color($_POST['nueva_primary_color']),
                 'primary_gradient_start' => sanitize_hex_color($_POST['nueva_primary_gradient_start']),

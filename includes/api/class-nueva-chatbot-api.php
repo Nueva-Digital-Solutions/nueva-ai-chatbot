@@ -610,20 +610,110 @@ class Nueva_Chatbot_API
 
     private function get_business_profile_context()
     {
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'bua_business_profile';
-        $results = $wpdb->get_results("SELECT meta_key, meta_value FROM $table_name");
+        $options = get_option('nueva_chat_options');
+        $biz_data = isset($options['business_info']) ? $options['business_info'] : [];
 
-        if (!$results)
+        if (empty($biz_data)) {
             return "";
-
-        $biz_info = "--- Business/Site Information ---\n";
-        foreach ($results as $row) {
-            $key = ucwords(str_replace('_', ' ', $row->meta_key));
-            $biz_info .= "$key: " . $row->meta_value . "\n";
         }
-        $biz_info .= "--- End Business Info ---\n";
-        return $biz_info;
+
+        $info = "--- Business Context ---\n";
+
+        // 1. Basic Details
+        $map = [
+            'business_name' => 'Name',
+            'legal_name' => 'Legal Name',
+            'founding_date' => 'Founding Date',
+            'gst' => 'Tax ID / GST',
+            'price_range' => 'Price Range',
+            'office_timing' => 'Office Timing',
+            'contact_link' => 'Contact Page'
+        ];
+
+        foreach ($map as $key => $label) {
+            if (!empty($biz_data[$key])) {
+                $info .= "$label: " . $biz_data[$key] . "\n";
+            }
+        }
+
+        // 2. Locations
+        if (!empty($biz_data['locations']) && is_array($biz_data['locations'])) {
+            $info .= "\n[Locations]\n";
+            foreach ($biz_data['locations'] as $loc) {
+                $parts = [];
+                if (!empty($loc['addr1']))
+                    $parts[] = $loc['addr1'];
+                if (!empty($loc['addr2']))
+                    $parts[] = $loc['addr2'];
+                if (!empty($loc['city']))
+                    $parts[] = $loc['city'];
+                if (!empty($loc['pincode']))
+                    $parts[] = $loc['pincode'];
+                if (!empty($loc['country']))
+                    $parts[] = $loc['country'];
+                if (!empty($loc['mobile']))
+                    $parts[] = "(Tel: " . $loc['mobile'] . ")";
+
+                $info .= "- " . implode(", ", $parts) . "\n";
+            }
+        }
+
+        // 3. Contact Methods
+        if (!empty($biz_data['emails']) && is_array($biz_data['emails'])) {
+            $info .= "\n[Emails]\n";
+            foreach ($biz_data['emails'] as $em) {
+                if (!empty($em['email'])) {
+                    $type = !empty($em['type']) ? ucfirst($em['type']) : 'Support';
+                    $info .= "- $type: " . $em['email'] . "\n";
+                }
+            }
+        }
+
+        if (!empty($biz_data['mobile_numbers']) && is_array($biz_data['mobile_numbers'])) {
+            $info .= "\n[Phone Numbers]\n";
+            foreach ($biz_data['mobile_numbers'] as $mob) {
+                if (!empty($mob['number'])) {
+                    $type = !empty($mob['type']) ? ucfirst($mob['type']) : 'Support';
+                    $info .= "- $type: " . $mob['number'] . "\n";
+                }
+            }
+        }
+
+        // 4. Social & People
+        if (!empty($biz_data['social_media']) && is_array($biz_data['social_media'])) {
+            $info .= "\n[Social Media]\n";
+            foreach ($biz_data['social_media'] as $soc) {
+                if (!empty($soc['link'])) {
+                    $platform = !empty($soc['platform']) ? ucfirst($soc['platform']) : 'Link';
+                    $info .= "- $platform: " . $soc['link'] . "\n";
+                }
+            }
+        }
+
+        if (!empty($biz_data['founders']) && is_array($biz_data['founders'])) {
+            $names = [];
+            foreach ($biz_data['founders'] as $f) {
+                if (!empty($f['name']))
+                    $names[] = $f['name'];
+            }
+            if (!empty($names)) {
+                $info .= "\nFounders: " . implode(", ", $names) . "\n";
+            }
+        }
+
+        if (!empty($biz_data['service_areas']) && is_array($biz_data['service_areas'])) {
+            $areas = [];
+            foreach ($biz_data['service_areas'] as $a) {
+                if (!empty($a['name']))
+                    $areas[] = $a['name'];
+            }
+            if (!empty($areas)) {
+                $info .= "\nService Areas: " . implode(", ", $areas) . "\n";
+            }
+        }
+
+        $info .= "--- End Business Context ---\n";
+        return $info;
     }
 
     private function get_kb_context($query)

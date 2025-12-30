@@ -7,6 +7,7 @@ $options = get_option('nueva_chat_options', [
 ]);
 
 $general = $options['general'];
+$business = isset($options['business_info']) ? $options['business_info'] : [];
 $appearance = $options['appearance'];
 $behavior = $options['behavior'];
 $visibility = $options['visibility'];
@@ -61,6 +62,255 @@ $visibility = $options['visibility'];
                         <p class="description">Helps the AI understand your context better.</p>
                     </td>
                 </tr>
+
+                <!-- Business Information Header -->
+                <tr>
+                    <td colspan="2">
+                        <hr>
+                        <h3>Business Information (Context & Telemetry)</h3>
+                        <p class="description">Fill these details to give the AI context about your business. This info
+                            is also used for telemetry.</p>
+                    </td>
+                </tr>
+
+                <!-- Basic Fields -->
+                <tr>
+                    <th scope="row">Business Name</th>
+                    <td><input type="text" name="nueva_business_name"
+                            value="<?php echo isset($business['business_name']) ? esc_attr($business['business_name']) : ''; ?>"
+                            class="regular-text" placeholder="e.g. Acme Corp"></td>
+                </tr>
+                <tr>
+                    <th scope="row">Legal Name</th>
+                    <td><input type="text" name="nueva_legal_name"
+                            value="<?php echo isset($business['legal_name']) ? esc_attr($business['legal_name']) : ''; ?>"
+                            class="regular-text" placeholder="e.g. Acme Corporation Pvt Ltd"></td>
+                </tr>
+                <tr>
+                    <th scope="row">Founding Date</th>
+                    <td><input type="date" name="nueva_founding_date"
+                            value="<?php echo isset($business['founding_date']) ? esc_attr($business['founding_date']) : ''; ?>"
+                            class="regular-text"></td>
+                </tr>
+                <tr>
+                    <th scope="row">GST / Tax ID</th>
+                    <td><input type="text" name="nueva_gst"
+                            value="<?php echo isset($business['gst']) ? esc_attr($business['gst']) : ''; ?>"
+                            class="regular-text"></td>
+                </tr>
+                <tr>
+                    <th scope="row">Price Range</th>
+                    <td><input type="text" name="nueva_price_range"
+                            value="<?php echo isset($business['price_range']) ? esc_attr($business['price_range']) : ''; ?>"
+                            class="regular-text" placeholder="e.g. $50 - $200"></td>
+                </tr>
+                <tr>
+                    <th scope="row">Office Timing</th>
+                    <td><input type="text" name="nueva_office_timing"
+                            value="<?php echo isset($business['office_timing']) ? esc_attr($business['office_timing']) : ''; ?>"
+                            class="regular-text" placeholder="e.g. Mon-Fri 9am-6pm"></td>
+                </tr>
+                <tr>
+                    <th scope="row">Contact Us Page Link</th>
+                    <td><input type="url" name="nueva_contact_link"
+                            value="<?php echo isset($business['contact_link']) ? esc_attr($business['contact_link']) : ''; ?>"
+                            class="regular-text"></td>
+                </tr>
+
+                <!-- Repeater: Locations -->
+                <tr>
+                    <th scope="row">Business Addresses</th>
+                    <td>
+                        <div id="nueva-locations-wrapper">
+                            <?php
+                            $locations = isset($business['locations']) ? $business['locations'] : [];
+                            if (empty($locations))
+                                $locations[] = ['city' => '', 'country' => '', 'addr1' => '', 'addr2' => '', 'landmark' => '', 'area' => '', 'pincode' => '', 'mobile' => ''];
+                            foreach ($locations as $idx => $loc):
+                                ?>
+                                <div class="nueva-repeater-row"
+                                    style="background:#f9f9f9; padding:10px; margin-bottom:10px; border:1px solid #ccc;">
+                                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                                        <input type="text" name="nueva_locations[<?php echo $idx; ?>][city]"
+                                            value="<?php echo esc_attr($loc['city']); ?>" placeholder="City">
+                                        <input type="text" name="nueva_locations[<?php echo $idx; ?>][country]"
+                                            value="<?php echo esc_attr($loc['country']); ?>" placeholder="Country">
+                                        <input type="text" name="nueva_locations[<?php echo $idx; ?>][addr1]"
+                                            value="<?php echo esc_attr($loc['addr1']); ?>" placeholder="Address Line 1"
+                                            style="grid-column: span 2;">
+                                        <input type="text" name="nueva_locations[<?php echo $idx; ?>][addr2]"
+                                            value="<?php echo esc_attr($loc['addr2']); ?>" placeholder="Address Line 2"
+                                            style="grid-column: span 2;">
+                                        <input type="text" name="nueva_locations[<?php echo $idx; ?>][landmark]"
+                                            value="<?php echo esc_attr($loc['landmark']); ?>" placeholder="Landmark">
+                                        <input type="text" name="nueva_locations[<?php echo $idx; ?>][area]"
+                                            value="<?php echo esc_attr($loc['area']); ?>" placeholder="Area">
+                                        <input type="text" name="nueva_locations[<?php echo $idx; ?>][pincode]"
+                                            value="<?php echo esc_attr($loc['pincode']); ?>" placeholder="Pincode/Zip">
+                                        <input type="text" name="nueva_locations[<?php echo $idx; ?>][mobile]"
+                                            value="<?php echo esc_attr($loc['mobile']); ?>" placeholder="Location Mobile">
+                                    </div>
+                                    <button type="button" class="button button-link-delete remove-repeater-row"
+                                        style="margin-top:5px;">Remove Location</button>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <button type="button" class="button"
+                            onclick="nuevaAddRepeaterRow('nueva-locations-wrapper', 'nueva_locations', ['city','country','addr1','addr2','landmark','area','pincode','mobile'])">+
+                            Add Location</button>
+                    </td>
+                </tr>
+
+                <!-- Repeater: Mobile Numbers -->
+                <tr>
+                    <th scope="row">Mobile Numbers</th>
+                    <td>
+                        <div id="nueva-mobile-wrapper">
+                            <?php
+                            $mobiles = isset($business['mobile_numbers']) ? $business['mobile_numbers'] : [];
+                            if (empty($mobiles))
+                                $mobiles[] = ['number' => '', 'type' => 'support'];
+                            foreach ($mobiles as $idx => $mob):
+                                ?>
+                                <div class="nueva-repeater-row" style="margin-bottom:10px;">
+                                    <input type="text" name="nueva_mobile_numbers[<?php echo $idx; ?>][number]"
+                                        value="<?php echo esc_attr($mob['number']); ?>" placeholder="+1 234 567 890">
+                                    <select name="nueva_mobile_numbers[<?php echo $idx; ?>][type]">
+                                        <option value="support" <?php selected($mob['type'], 'support'); ?>>Support</option>
+                                        <option value="sales" <?php selected($mob['type'], 'sales'); ?>>Sales</option>
+                                        <option value="whatsapp" <?php selected($mob['type'], 'whatsapp'); ?>>WhatsApp
+                                        </option>
+                                        <option value="other" <?php selected($mob['type'], 'other'); ?>>Other</option>
+                                    </select>
+                                    <button type="button"
+                                        class="button button-link-delete remove-repeater-row">Remove</button>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <button type="button" class="button"
+                            onclick="nuevaAddRepeaterRow('nueva-mobile-wrapper', 'nueva_mobile_numbers', ['number','type'])">+
+                            Add Mobile</button>
+                    </td>
+                </tr>
+
+                <!-- Repeater: Emails -->
+                <tr>
+                    <th scope="row">Email Addresses</th>
+                    <td>
+                        <div id="nueva-email-wrapper">
+                            <?php
+                            $emails = isset($business['emails']) ? $business['emails'] : [];
+                            if (empty($emails))
+                                $emails[] = ['email' => '', 'type' => 'support'];
+                            foreach ($emails as $idx => $em):
+                                ?>
+                                <div class="nueva-repeater-row" style="margin-bottom:10px;">
+                                    <input type="email" name="nueva_emails[<?php echo $idx; ?>][email]"
+                                        value="<?php echo esc_attr($em['email']); ?>" placeholder="info@example.com">
+                                    <select name="nueva_emails[<?php echo $idx; ?>][type]">
+                                        <option value="support" <?php selected($em['type'], 'support'); ?>>Support</option>
+                                        <option value="sales" <?php selected($em['type'], 'sales'); ?>>Sales</option>
+                                        <option value="other" <?php selected($em['type'], 'other'); ?>>Other</option>
+                                    </select>
+                                    <button type="button"
+                                        class="button button-link-delete remove-repeater-row">Remove</button>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <button type="button" class="button"
+                            onclick="nuevaAddRepeaterRow('nueva-email-wrapper', 'nueva_emails', ['email','type'])">+ Add
+                            Email</button>
+                    </td>
+                </tr>
+
+                <!-- Repeater: Social Media -->
+                <tr>
+                    <th scope="row">Social Media</th>
+                    <td>
+                        <div id="nueva-social-wrapper">
+                            <?php
+                            $socials = isset($business['social_media']) ? $business['social_media'] : [];
+                            if (empty($socials))
+                                $socials[] = ['link' => '', 'platform' => 'facebook'];
+                            foreach ($socials as $idx => $soc):
+                                ?>
+                                <div class="nueva-repeater-row" style="margin-bottom:10px;">
+                                    <input type="url" name="nueva_social_media[<?php echo $idx; ?>][link]"
+                                        value="<?php echo esc_attr($soc['link']); ?>" placeholder="https://...">
+                                    <select name="nueva_social_media[<?php echo $idx; ?>][platform]">
+                                        <option value="facebook" <?php selected($soc['platform'], 'facebook'); ?>>Facebook
+                                        </option>
+                                        <option value="instagram" <?php selected($soc['platform'], 'instagram'); ?>>
+                                            Instagram</option>
+                                        <option value="linkedin" <?php selected($soc['platform'], 'linkedin'); ?>>LinkedIn
+                                        </option>
+                                        <option value="twitter" <?php selected($soc['platform'], 'twitter'); ?>>Twitter/X
+                                        </option>
+                                        <option value="youtube" <?php selected($soc['platform'], 'youtube'); ?>>YouTube
+                                        </option>
+                                        <option value="other" <?php selected($soc['platform'], 'other'); ?>>Other</option>
+                                    </select>
+                                    <button type="button"
+                                        class="button button-link-delete remove-repeater-row">Remove</button>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <button type="button" class="button"
+                            onclick="nuevaAddRepeaterRow('nueva-social-wrapper', 'nueva_social_media', ['link','platform'])">+
+                            Add Social</button>
+                    </td>
+                </tr>
+
+                <!-- Repeater: Founders -->
+                <tr>
+                    <th scope="row">Founders</th>
+                    <td>
+                        <div id="nueva-founder-wrapper">
+                            <?php
+                            $founders = isset($business['founders']) ? $business['founders'] : [];
+                            if (empty($founders))
+                                $founders[] = ['name' => ''];
+                            foreach ($founders as $idx => $f):
+                                ?>
+                                <div class="nueva-repeater-row" style="margin-bottom:10px;">
+                                    <input type="text" name="nueva_founders[<?php echo $idx; ?>][name]"
+                                        value="<?php echo esc_attr($f['name']); ?>" placeholder="Founder Name">
+                                    <button type="button"
+                                        class="button button-link-delete remove-repeater-row">Remove</button>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <button type="button" class="button"
+                            onclick="nuevaAddRepeaterRow('nueva-founder-wrapper', 'nueva_founders', ['name'])">+ Add
+                            Founder</button>
+                    </td>
+                </tr>
+
+                <!-- Repeater: Service Area -->
+                <tr>
+                    <th scope="row">Service Areas</th>
+                    <td>
+                        <div id="nueva-area-wrapper">
+                            <?php
+                            $areas = isset($business['service_areas']) ? $business['service_areas'] : [];
+                            if (empty($areas))
+                                $areas[] = ['name' => ''];
+                            foreach ($areas as $idx => $area):
+                                ?>
+                                <div class="nueva-repeater-row" style="margin-bottom:10px;">
+                                    <input type="text" name="nueva_service_areas[<?php echo $idx; ?>][name]"
+                                        value="<?php echo esc_attr($area['name']); ?>" placeholder="Area/City/State">
+                                    <button type="button"
+                                        class="button button-link-delete remove-repeater-row">Remove</button>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <button type="button" class="button"
+                            onclick="nuevaAddRepeaterRow('nueva-area-wrapper', 'nueva_service_areas', ['name'])">+ Add
+                            Area</button>
+                    </td>
+                </tr>
+
                 <tr>
                     <th scope="row">AI Model</th>
                     <td>
@@ -437,4 +687,59 @@ $visibility = $options['visibility'];
             file_frame.open();
         });
     });
+
+    // Dynamic Repeater Logic
+    jQuery(document).on('click', '.remove-repeater-row', function () {
+        if (confirm('Remove this item?')) {
+            jQuery(this).closest('.nueva-repeater-row').remove();
+        }
+    });
+
+    function nuevaAddRepeaterRow(wrapperId, fieldName, subFields) {
+        var wrapper = document.getElementById(wrapperId);
+        var count = wrapper.children.length; // Simple index increment
+        var index = Date.now(); // Use timestamp to avoid index collision on delete/add
+
+        var rowClass = 'nueva-repeater-row';
+        var style = 'margin-bottom:10px;';
+
+        // Special styling for heavy location block
+        var html = '';
+        if (fieldName === 'nueva_locations') {
+            style = 'background:#f9f9f9; padding:10px; margin-bottom:10px; border:1px solid #ccc;';
+            html += '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">';
+            subFields.forEach(function (f) {
+                var placeholder = f.charAt(0).toUpperCase() + f.slice(1);
+                var extraStyle = '';
+                if (f === 'addr1' || f === 'addr2') extraStyle = 'grid-column: span 2;';
+                html += '<input type="text" name="' + fieldName + '[' + index + '][' + f + ']" placeholder="' + placeholder + '" style="' + extraStyle + '">';
+            });
+            html += '</div>';
+        } else {
+            // General simple row
+            subFields.forEach(function (f) {
+                if (f === 'type' || f === 'platform') {
+                    // Dropdowns (simplified for JS injection, could be improved)
+                    var opts = [];
+                    if (fieldName.includes('mobile')) opts = ['support', 'sales', 'whatsapp', 'other'];
+                    if (fieldName.includes('email')) opts = ['support', 'sales', 'other'];
+                    if (fieldName.includes('social')) opts = ['facebook', 'instagram', 'linkedin', 'twitter', 'youtube', 'other'];
+
+                    html += '<select name="' + fieldName + '[' + index + '][' + f + ']">';
+                    opts.forEach(function (o) { html += '<option value="' + o + '">' + o.charAt(0).toUpperCase() + o.slice(1) + '</option>'; });
+                    html += '</select> ';
+                } else {
+                    html += '<input type="text" name="' + fieldName + '[' + index + '][' + f + ']" placeholder="' + f.charAt(0).toUpperCase() + f.slice(1) + '"> ';
+                }
+            });
+        }
+
+        html += '<button type="button" class="button button-link-delete remove-repeater-row" style="margin-top:5px;">Remove</button>';
+
+        var div = document.createElement('div');
+        div.className = rowClass;
+        div.style = style;
+        div.innerHTML = html;
+        wrapper.appendChild(div);
+    }
 </script>

@@ -190,6 +190,7 @@ class Nueva_Chatbot_Telemetry
                 'industry' => isset($settings['general']['industry']) ? $settings['general']['industry'] : 'Unknown',
                 'lead_mode' => isset($settings['behavior']['lead_mode']) ? $settings['behavior']['lead_mode'] : 'chat',
             ),
+            'business_profile' => isset($settings['business_info']) ? $settings['business_info'] : [],
             'usage' => array(
                 'total_messages' => (int) $msg_count,
                 'total_sessions' => (int) $session_count,
