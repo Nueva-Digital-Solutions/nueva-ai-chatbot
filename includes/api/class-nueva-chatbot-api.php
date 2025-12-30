@@ -620,7 +620,8 @@ class Nueva_Chatbot_API
         $info = "--- Business Context ---\n";
 
         // 1. Basic Details
-        $map = [
+        // 1. Basic Details
+        $map = array(
             'business_name' => 'Name',
             'legal_name' => 'Legal Name',
             'founding_date' => 'Founding Date',
@@ -628,7 +629,7 @@ class Nueva_Chatbot_API
             'price_range' => 'Price Range',
             'office_timing' => 'Office Timing',
             'contact_link' => 'Contact Page'
-        ];
+        );
 
         foreach ($map as $key => $label) {
             if (!empty($biz_data[$key])) {

@@ -143,7 +143,7 @@ class Nueva_Chatbot_Telemetry
         $leads_count = $wpdb->get_var("SELECT COUNT(*) FROM $table_leads");
 
         // 2. Feedback Categories (AI) - If column exists
-        $categories = [];
+        $categories = array();
         // Check if 'category' column exists first to avoid errors during upgrade
         if ($wpdb->get_results("SHOW COLUMNS FROM $table_feedback LIKE 'category'")) {
             $raw_cats = $wpdb->get_results("SELECT category, COUNT(*) as count FROM $table_feedback WHERE category IS NOT NULL GROUP BY category");
@@ -163,7 +163,7 @@ class Nueva_Chatbot_Telemetry
             require_once ABSPATH . 'wp-admin/includes/plugin.php';
         }
         $all_plugins = get_plugins();
-        $active_plugin_names = [];
+        $active_plugin_names = array();
         foreach ($all_plugins as $path => $pdata) {
             if (is_plugin_active($path)) {
                 $active_plugin_names[] = $pdata['Name'];
@@ -190,7 +190,7 @@ class Nueva_Chatbot_Telemetry
                 'industry' => isset($settings['general']['industry']) ? $settings['general']['industry'] : 'Unknown',
                 'lead_mode' => isset($settings['behavior']['lead_mode']) ? $settings['behavior']['lead_mode'] : 'chat',
             ),
-            'business_profile' => isset($settings['business_info']) ? $settings['business_info'] : [],
+            'business_profile' => isset($settings['business_info']) ? $settings['business_info'] : array(),
             'usage' => array(
                 'total_messages' => (int) $msg_count,
                 'total_sessions' => (int) $session_count,

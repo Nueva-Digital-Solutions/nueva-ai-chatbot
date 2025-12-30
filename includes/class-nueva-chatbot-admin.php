@@ -344,27 +344,27 @@ class Nueva_Chatbot_Admin
         $post_types = get_post_types(array('public' => true), 'names');
         unset($post_types['attachment'], $post_types['revision'], $post_types['nav_menu_item']);
 
-        $args = [
+        $args = array(
             'post_type' => array_values($post_types),
             'posts_per_page' => -1,
             'post_status' => 'publish',
             'orderby' => 'title',
             'order' => 'ASC'
-        ];
+        );
 
         $query = new WP_Query($args);
-        $results = [];
+        $results = array();
 
         if ($query->have_posts()) {
             while ($query->have_posts()) {
                 $query->the_post();
-                $results[] = [
+                $results[] = array(
                     'id' => get_the_ID(),
                     'title' => get_the_title(),
                     'type' => get_post_type(),
                     'date' => get_the_date('Y-m-d'),
                     'link' => get_permalink()
-                ];
+                );
             }
             wp_reset_postdata();
         }
@@ -417,18 +417,17 @@ class Nueva_Chatbot_Admin
                 $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table_name WHERE source_ref = %s", $link));
 
                 if (!$exists) {
-                    $wpdb->insert($table_name, [
+                    $wpdb->insert($table_name, array(
                         'type' => 'wp_' . $post->post_type,
                         'source_ref' => $link,
                         'content' => substr($clean_text, 0, 10000), // Limit size safer
                         'created_at' => current_time('mysql')
-                    ]);
+                    ));
                     $count++;
                 }
             }
         }
 
-        wp_send_json_success(['added' => $count]);
+        wp_send_json_success(array('count' => $count, 'message' => "Imported $count items."));
     }
 }
-
