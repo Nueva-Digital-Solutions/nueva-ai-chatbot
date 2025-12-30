@@ -208,8 +208,8 @@ class Nueva_Chatbot_Admin
     {
         check_ajax_referer('nueva_admin_nonce', 'nonce');
 
-        $notifications = get_option('nueva_admin_notifications', []);
-        $unread = [];
+        $notifications = get_option('nueva_admin_notifications', array());
+        $unread = array();
 
         if (!empty($notifications)) {
             foreach ($notifications as $n) {
@@ -227,7 +227,7 @@ class Nueva_Chatbot_Admin
         check_ajax_referer('nueva_admin_nonce', 'nonce');
         $session_id = sanitize_text_field($_POST['session_id']);
 
-        $notifications = get_option('nueva_admin_notifications', []);
+        $notifications = get_option('nueva_admin_notifications', array());
         foreach ($notifications as &$n) {
             if ($n['session_id'] === $session_id) {
                 $n['read'] = true;
@@ -255,8 +255,8 @@ class Nueva_Chatbot_Admin
 
         foreach ($leads as $lead) {
             $data = json_decode($lead['user_data'], true);
-            $name = $data['name'] ?? '';
-            $email = $data['email'] ?? '';
+            $name = isset($data['name']) ? $data['name'] : '';
+            $email = isset($data['email']) ? $data['email'] : '';
 
             fputcsv($output, array(
                 $lead['id'],

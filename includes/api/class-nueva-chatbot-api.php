@@ -59,7 +59,7 @@ class Nueva_Chatbot_API
         }
 
         // Validation: Type
-        $allowed_mimes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+        $allowed_mimes = array('image/jpeg', 'image/png', 'image/webp', 'application/pdf');
         $file_info = wp_check_filetype($file['name']);
         if (!in_array($file_info['type'], $allowed_mimes)) {
             wp_send_json_error('Invalid file type. Only JPG, PNG, WEBP, PDF allowed.');
