@@ -299,7 +299,7 @@ class Nueva_Chatbot_API
             } else {
                 // Trigger Notification
                 $this->add_admin_notification($session_id, $user_message);
-                return "I have notified a human agent. They will join shortly or contact you via the details provided. Is there anything else I can help with in the meantime?";
+                return "I have notified a human agent. They will contact you via mail, WhatsApp, or call shortly. Is there anything else I can help with in the meantime?";
             }
         }
         // --- HANDOFF LOGIC END ---
@@ -322,6 +322,9 @@ class Nueva_Chatbot_API
 
         // 1. Core Persona
         $system_prompt = "You are $agent_name. Your tone is $tone. You are an AI support agent for this specific website.\n";
+
+        // STRICT RULE ADDITION
+        $system_prompt .= "CRITICAL: You must NEVER invent information. Verify EVERY answer against the provided Context below. If the user corrects you or asks something not in the context, apologize and explicitly state that the information is not available in your knowledge base.\n";
 
         // 2. Strictness
         if ($kb_strictness === 'strict') {

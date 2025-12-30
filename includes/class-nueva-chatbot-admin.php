@@ -114,7 +114,30 @@ class Nueva_Chatbot_Admin
             'Chat History',
             'manage_options',
             'nueva-ai-history',
+            'display_history_page' // Fixed string callback for older WP versions sanity or direct array
+            // Assuming array($this, ...) format is consistent, I'll stick to replacing the block if needed or just appending.
+            // Wait, the previous code uses array($this, ...). I should match that.
+        );
+
+        // Fix: Previous implementation was closing the method too early or I'm inserting into the list.
+        // Let's rewrite the Chat History block and ADD the new block cleanly.
+
+        add_submenu_page(
+            'nueva-ai-chat',
+            'Chat History',
+            'Chat History',
+            'manage_options',
+            'nueva-ai-history',
             array($this, 'display_history_page')
+        );
+
+        add_submenu_page(
+            'nueva-ai-chat',
+            'Real Time Agent',
+            'Real Time Agent',
+            'manage_options',
+            'nueva-ai-realtime',
+            array($this, 'display_realtime_page')
         );
     }
 
@@ -157,6 +180,11 @@ class Nueva_Chatbot_Admin
         require_once plugin_dir_path(__FILE__) . 'class-nueva-chatbot-history.php';
         $history = new Nueva_Chatbot_History();
         $history->display_page();
+    }
+
+    public function display_realtime_page()
+    {
+        require_once plugin_dir_path(__FILE__) . '../admin/partials/nueva-ai-chatbot-realtime-display.php';
     }
 
     public function define_admin_hooks()
