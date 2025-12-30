@@ -590,83 +590,16 @@ class Nueva_Chatbot_API
         } else {
             $context .= "User Status: GUEST (Not Logged In)\n";
 
-            // Guest Order Lookup Logic
-            if ($guest_orders_enabled === 'yes' && class_exists('WooCommerce')) {
-                // Scan history for email + order ID
-                global $wpdb;
-                $table_name = $wpdb->prefix . 'bua_chat_history';
-                $history = $wpdb->get_results($wpdb->prepare("SELECT message FROM $table_name ORDER BY timestamp DESC LIMIT 10"));
-
-                $found_email = '';
-                $found_order_id = '';
-                $found_phone = '';
-                $messages_text = '';
-
-                foreach ($history as $row) {
-                    $messages_text .= $row->message . "\n";
-                }
-
-                // 1. Extract Email (High Confidence)
-                preg_match('/[a-z0-9_\-\+\.]+@[a-z0-9\-]+\.([a-z]{2,4})(?:\.[a-z]{2})?/i', $messages_text, $email_matches);
-                if (!empty($email_matches[0]))
-                    $found_email = $email_matches[0];
-
-                // 2. Extract Phone Number (10-15 digits, ignoring format chars)
-                // Use a strict lookahead/behind or just clean string first
-                $clean_text_digits = preg_replace('/[^0-9]/', '', $messages_text);
-                // Look for clusters of 10-15 digits in the raw text to be safer
-                preg_match('/\b\d{10,15}\b/', str_replace(['-', ' ', '(', ')'], '', $messages_text), $phone_matches);
-                if (!empty($phone_matches[0]))
-                    $found_phone = $phone_matches[0];
-
-                // 3. Extract Order ID
-                // Strategy: prioritizing labeled IDs first ("Order #123" or "#123")
-                // Only fallback to bare digits if they are typical order length (e.g., 3-8 digits) and NOT phone length
-                $found_order_id = null;
-
-                // A. Explicit "Order #12345" or "#12345"
-                preg_match('/(?:order\s*|#)\s*(\d{3,9})\b/i', $messages_text, $explicit_order_matches);
-                if (!empty($explicit_order_matches[1])) {
-                    $found_order_id = $explicit_order_matches[1];
-                }
-                // B. Fallback: Loose 4-8 digits, but ensure it's NOT the same validity as the phone number found
-                else {
-                    preg_match('/\b\d{4,8}\b/', $messages_text, $loose_matches);
-                    if (!empty($loose_matches[0])) {
-                        // Check if this "Order ID" is actually part of the phone number
-                        if (!$found_phone || strpos($found_phone, $loose_matches[0]) === false) {
-                            $found_order_id = $loose_matches[0];
-                        }
-                    }
-                }
-
-                if (!empty($found_order_id) && (!empty($found_email) || !empty($found_phone))) {
-                    // Query WooCommerce
-                    $args = ['post__in' => [$found_order_id]];
-                    $orders = wc_get_orders($args);
-
-                    if (!empty($orders)) {
-                        $order = $orders[0];
-                        // Verify
-                        $o_email = $order->get_billing_email();
-                        $o_phone = str_replace(['-', ' ', '(', ')'], '', $order->get_billing_phone());
-
-                        $match = false;
-                        if ($found_email && strcasecmp($found_email, $o_email) === 0)
-                            $match = true;
-                        if ($found_phone && strpos($o_phone, $found_phone) !== false)
-                            $match = true;
-
-                        if ($match) {
-                            $context .= "[SYSTEM] Verified Guest Order Found:\n";
-                            $context .= "- Order #{$found_order_id}\n";
-                            $context .= "- Status: " . $order->get_status() . "\n";
-                            $context .= "- Total: " . wc_price($order->get_total()) . "\n";
-                            $context .= "- Date: " . $order->get_date_created()->format('Y-m-d') . "\n";
-                        }
-                    }
+            // Login Prompt Logic
+            $login_url = wp_login_url(); // Default fallback
+            if (class_exists('WooCommerce')) {
+                $my_account_id = get_option('woocommerce_myaccount_page_id');
+                if ($my_account_id) {
+                    $login_url = get_permalink($my_account_id);
                 }
             }
+
+            $context .= "Instruction: The user is NOT logged in. If they ask about their orders, account status, or recent purchases, politely ask them to log in first. Provide this link: [Login / My Account]($login_url). Do NOT attempt to look up orders for guests.\n";
         }
 
         return $context;
