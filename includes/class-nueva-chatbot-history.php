@@ -70,6 +70,38 @@ class Nueva_Chatbot_History
                     var sid = $(this).data('session');
                     $('#transcript-' + sid).toggle();
                 });
+
+                // Admin Feedback Save
+                $('.save-admin-feedback').click(function(e) {
+                    e.preventDefault();
+                    var btn = $(this);
+                    var container = btn.closest('.nueva-admin-feedback-box');
+                    var sid = container.data('session');
+                    var rating = container.find('.admin-rating-select').val();
+                    var feedback = container.find('.admin-feedback-text').val();
+                    var msgSpan = container.find('.feedback-msg');
+                    var spinner = container.find('.spinner');
+
+                    msgSpan.text('').removeClass('notice-success notice-error');
+                    spinner.addClass('is-active');
+                    btn.prop('disabled', true);
+
+                    $.post(nueva_admin.ajax_url, {
+                        action: 'nueva_save_admin_feedback',
+                        nonce: nueva_admin.nonce,
+                        session_id: sid,
+                        admin_rating: rating,
+                        admin_feedback: feedback
+                    }, function(res) {
+                        spinner.removeClass('is-active');
+                        btn.prop('disabled', false);
+                        if (res.success) {
+                            msgSpan.text(res.data).css('color', 'green');
+                        } else {
+                            msgSpan.text(res.data).css('color', 'red');
+                        }
+                    });
+                });
             });
         </script>
         <?php
@@ -85,5 +117,32 @@ class Nueva_Chatbot_History
             $sender = $row->sender == 'user' ? '<strong style="color:blue;">User</strong>' : '<strong style="color:green;">Bot</strong>';
             echo "<p>[$row->timestamp] $sender: " . esc_html($row->message) . "</p>";
         }
+
+        // --- Admin Feedback Section ---
+        $fb_table = $wpdb->prefix . 'bua_chat_feedback';
+        $feedback = $wpdb->get_row($wpdb->prepare("SELECT * FROM $fb_table WHERE session_id = %s", $session_id));
+
+        $admin_rating = isset($feedback->admin_rating) ? $feedback->admin_rating : 0;
+        $admin_feedback = isset($feedback->admin_feedback) ? $feedback->admin_feedback : '';
+
+        echo '<hr>';
+        echo '<h3>Admin Feedback (AI Training)</h3>';
+        echo '<div class="nueva-admin-feedback-box" data-session="' . esc_attr($session_id) . '">';
+
+        echo '<label><strong>Rate Chat Quality (1-5):</strong></label><br>';
+        echo '<select class="admin-rating-select">';
+        echo '<option value="0">Select Rating</option>';
+        for ($i = 1; $i <= 5; $i++) {
+            $sel = ($admin_rating == $i) ? 'selected' : '';
+            echo "<option value='$i' $sel>$i Stars</option>";
+        }
+        echo '</select><br><br>';
+
+        echo '<label><strong>Suggestions for AI:</strong></label><br>';
+        echo '<textarea class="admin-feedback-text large-text" rows="3" placeholder="What should the AI have done differently?">' . esc_textarea($admin_feedback) . '</textarea><br><br>';
+
+        echo '<button type="button" class="button button-primary save-admin-feedback">Save Feedback</button>';
+        echo '<span class="spinner" style="float:none;"></span> <span class="feedback-msg"></span>';
+        echo '</div>';
     }
 }

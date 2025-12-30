@@ -17,6 +17,8 @@ class Nueva_Chatbot_Admin
         // Register AJAX (Admin side)
         add_action('wp_ajax_nueva_check_notifications', array($this, 'ajax_check_notifications'));
         add_action('wp_ajax_nueva_dismiss_notification', array($this, 'ajax_dismiss_notification'));
+        // Admin Feedback
+        add_action('wp_ajax_nueva_save_admin_feedback', array($this, 'ajax_save_admin_feedback'));
     }
 
     public function enqueue_styles()
@@ -279,6 +281,7 @@ class Nueva_Chatbot_Admin
             'general' => array(
                 'api_key' => sanitize_text_field($_POST['nueva_api_key']),
                 'agent_name' => sanitize_text_field($_POST['nueva_agent_name']),
+                'delete_data' => isset($_POST['nueva_delete_data']) ? (bool) $_POST['nueva_delete_data'] : false,
                 'notification_email' => sanitize_email($_POST['nueva_notification_email']),
                 'industry' => sanitize_text_field($_POST['nueva_industry']), // Added Industry
                 'model' => sanitize_text_field($_POST['nueva_model']),
@@ -323,7 +326,7 @@ class Nueva_Chatbot_Admin
                 'allow_links' => sanitize_text_field($_POST['nueva_allow_links']),
                 'guest_orders' => sanitize_text_field($_POST['nueva_guest_orders']),
                 'kb_strictness' => sanitize_text_field($_POST['nueva_kb_strictness']),
-                'lead_fields' => sanitize_textarea_field($_POST['nueva_lead_fields']),
+                'lead_fields' => isset($_POST['nueva_lead_fields']) ? $this->sanitize_recursive($_POST['nueva_lead_fields']) : array(),
                 'initial_message' => sanitize_textarea_field($_POST['nueva_initial_message']),
                 'enable_handoff' => isset($_POST['nueva_enable_handoff']) ? (bool) $_POST['nueva_enable_handoff'] : false,
                 'default_lang' => sanitize_text_field($_POST['nueva_default_lang']),
@@ -358,7 +361,7 @@ class Nueva_Chatbot_Admin
 
         $args = array(
             'post_type' => array_values($post_types),
-            'posts_per_page' => -1,
+            'posts_per_page' => 200, // Limit to prevent memory exhaustion (Network Error)
             'post_status' => 'publish',
             'orderby' => 'title',
             'order' => 'ASC'
@@ -441,5 +444,50 @@ class Nueva_Chatbot_Admin
         }
 
         wp_send_json_success(array('count' => $count, 'message' => "Imported $count items."));
+    }
+    public function ajax_save_admin_feedback()
+    {
+        check_ajax_referer('nueva_admin_nonce', 'nonce');
+
+        $session_id = sanitize_text_field($_POST['session_id']);
+        $rating = intval($_POST['admin_rating']); // Admin Rating
+        $feedback = sanitize_textarea_field($_POST['admin_feedback']); // Admin Suggestion
+
+        if (empty($session_id)) {
+            wp_send_json_error('Invalid Session ID.');
+        }
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'bua_chat_feedback';
+
+        // Check if row exists
+        $row = $wpdb->get_row($wpdb->prepare("SELECT id FROM $table_name WHERE session_id = %s", $session_id));
+
+        if ($row) {
+            // Update
+            $wpdb->update(
+                $table_name,
+                array('admin_rating' => $rating, 'admin_feedback' => $feedback),
+                array('id' => $row->id),
+                array('%d', '%s'),
+                array('%d')
+            );
+        } else {
+            // Insert (if user hasn't rated yet, we create the row)
+            $wpdb->insert(
+                $table_name,
+                array(
+                    'session_id' => $session_id,
+                    'rating' => 0, // No user rating yet
+                    'reason' => '',
+                    'admin_rating' => $rating,
+                    'admin_feedback' => $feedback,
+                    'created_at' => current_time('mysql')
+                ),
+                array('%s', '%d', '%s', '%d', '%s', '%s')
+            );
+        }
+
+        wp_send_json_success('Feedback saved successfully.');
     }
 }

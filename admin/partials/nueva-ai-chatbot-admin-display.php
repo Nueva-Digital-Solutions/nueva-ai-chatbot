@@ -50,16 +50,21 @@ $visibility = $options['visibility'];
                 <tr>
                     <th scope="row">Business Industry</th>
                     <td>
-                        <select name="nueva_industry">
-                            <option value="ecommerce" <?php selected(isset($general['industry']) ? $general['industry'] : '', 'ecommerce'); ?>>E-commerce / Retail</option>
-                            <option value="saas" <?php selected(isset($general['industry']) ? $general['industry'] : '', 'saas'); ?>>SaaS / Technology</option>
-                            <option value="service" <?php selected(isset($general['industry']) ? $general['industry'] : '', 'service'); ?>>Service Business (Agency, Consulting)</option>
-                            <option value="health" <?php selected(isset($general['industry']) ? $general['industry'] : '', 'health'); ?>>Healthcare / Medical</option>
-                            <option value="education" <?php selected(isset($general['industry']) ? $general['industry'] : '', 'education'); ?>>Education / School</option>
-                            <option value="blog" <?php selected(isset($general['industry']) ? $general['industry'] : '', 'blog'); ?>>Blog / News / Media</option>
-                            <option value="other" <?php selected(isset($general['industry']) ? $general['industry'] : '', 'other'); ?>>Other</option>
-                        </select>
+                        <input type="text" name="nueva_industry"
+                            value="<?php echo isset($general['industry']) ? esc_attr($general['industry']) : ''; ?>"
+                            class="regular-text" placeholder="e.g. E-commerce, SaaS, Healthcare" />
                         <p class="description">Helps the AI understand your context better.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Data Management</th>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="nueva_delete_data" value="1" <?php checked(isset($general['delete_data']) ? $general['delete_data'] : false); ?> />
+                            Delete all plugin data on uninstall
+                        </label>
+                        <p class="description">If checked, all leads, knowledge base items, and settings will be
+                            permanently deleted when you delete the plugin.</p>
                     </td>
                 </tr>
 
@@ -175,13 +180,9 @@ $visibility = $options['visibility'];
                                 <div class="nueva-repeater-row" style="margin-bottom:10px;">
                                     <input type="text" name="nueva_mobile_numbers[<?php echo $idx; ?>][number]"
                                         value="<?php echo esc_attr($mob['number']); ?>" placeholder="+1 234 567 890">
-                                    <select name="nueva_mobile_numbers[<?php echo $idx; ?>][type]">
-                                        <option value="support" <?php selected($mob['type'], 'support'); ?>>Support</option>
-                                        <option value="sales" <?php selected($mob['type'], 'sales'); ?>>Sales</option>
-                                        <option value="whatsapp" <?php selected($mob['type'], 'whatsapp'); ?>>WhatsApp
-                                        </option>
-                                        <option value="other" <?php selected($mob['type'], 'other'); ?>>Other</option>
-                                    </select>
+                                    <input type="text" name="nueva_mobile_numbers[<?php echo $idx; ?>][type]"
+                                        value="<?php echo esc_attr($mob['type']); ?>" placeholder="Type (e.g. Support)"
+                                        style="width: 150px;">
                                     <button type="button"
                                         class="button button-link-delete remove-repeater-row">Remove</button>
                                 </div>
@@ -207,11 +208,9 @@ $visibility = $options['visibility'];
                                 <div class="nueva-repeater-row" style="margin-bottom:10px;">
                                     <input type="email" name="nueva_emails[<?php echo $idx; ?>][email]"
                                         value="<?php echo esc_attr($em['email']); ?>" placeholder="info@example.com">
-                                    <select name="nueva_emails[<?php echo $idx; ?>][type]">
-                                        <option value="support" <?php selected($em['type'], 'support'); ?>>Support</option>
-                                        <option value="sales" <?php selected($em['type'], 'sales'); ?>>Sales</option>
-                                        <option value="other" <?php selected($em['type'], 'other'); ?>>Other</option>
-                                    </select>
+                                    <input type="text" name="nueva_emails[<?php echo $idx; ?>][type]"
+                                        value="<?php echo esc_attr($em['type']); ?>" placeholder="Type (e.g. Support)"
+                                        style="width: 150px;">
                                     <button type="button"
                                         class="button button-link-delete remove-repeater-row">Remove</button>
                                 </div>
@@ -571,12 +570,51 @@ $visibility = $options['visibility'];
                 <tr>
                     <th scope="row">Lead Fields to Collect</th>
                     <td>
-                        <textarea name="nueva_lead_fields" class="large-text" rows="4"
-                            placeholder="Name, Email, Phone, City, Order ID, etc."><?php
-                            echo isset($behavior['lead_fields']) ? esc_textarea($behavior['lead_fields']) : 'Name, Email, Phone';
-                            ?></textarea>
-                        <p class="description">List all fields the AI should collect from the user (comma or new-line
-                            separated). The AI will validate standard formats (Email, Phone) automatically.</p>
+                        <div id="nueva-lead-fields-wrapper">
+                            <?php
+                            $lead_fields_raw = isset($behavior['lead_fields']) ? $behavior['lead_fields'] : 'Name, Email, Phone';
+                            $lead_fields = [];
+                            // Migration Logic
+                            if (is_array($lead_fields_raw)) {
+                                $lead_fields = $lead_fields_raw;
+                            } else {
+                                $parts = explode(',', $lead_fields_raw);
+                                foreach ($parts as $p) {
+                                    $label = trim($p);
+                                    if (!empty($label))
+                                        $lead_fields[] = ['label' => $label, 'type' => 'text', 'purpose' => 'Lead Info'];
+                                }
+                            }
+                            if (empty($lead_fields))
+                                $lead_fields[] = ['label' => 'Name', 'type' => 'text', 'purpose' => 'Identification'];
+
+                            foreach ($lead_fields as $idx => $field):
+                                ?>
+                                <div class="nueva-repeater-row"
+                                    style="margin-bottom:10px; display:flex; gap:10px; align-items:center;">
+                                    <input type="text" name="nueva_lead_fields[<?php echo $idx; ?>][label]"
+                                        value="<?php echo esc_attr($field['label']); ?>"
+                                        placeholder="Field Label (e.g. Name)" required>
+                                    <select name="nueva_lead_fields[<?php echo $idx; ?>][type]">
+                                        <option value="text" <?php selected($field['type'], 'text'); ?>>Text</option>
+                                        <option value="email" <?php selected($field['type'], 'email'); ?>>Email</option>
+                                        <option value="phone" <?php selected($field['type'], 'phone'); ?>>Phone</option>
+                                        <option value="number" <?php selected($field['type'], 'number'); ?>>Number</option>
+                                    </select>
+                                    <input type="text" name="nueva_lead_fields[<?php echo $idx; ?>][purpose]"
+                                        value="<?php echo isset($field['purpose']) ? esc_attr($field['purpose']) : ''; ?>"
+                                        placeholder="Purpose (Context for AI)" style="width: 250px;">
+                                    <button type="button"
+                                        class="button button-link-delete remove-repeater-row">Remove</button>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <button type="button" class="button"
+                            onclick="nuevaAddRepeaterRow('nueva-lead-fields-wrapper', 'nueva_lead_fields', ['label', 'type', 'purpose'])">+
+                            Add
+                            Field</button>
+                        <p class="description">Define fields for the AI to collect. Purpose helps the AI understand why
+                            it's asking.</p>
                     </td>
                 </tr>
                 <tr>
@@ -633,13 +671,16 @@ $visibility = $options['visibility'];
                 <tr>
                     <th scope="row">Exclude on Pages/Posts</th>
                     <td>
-                        <select name="nueva_exclude_pages[]" multiple style="height: 300px; width: 100%;">
+                        <div
+                            style="height: 300px; width: 100%; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; background: #fff;">
                             <?php foreach ($all_pages as $p): ?>
-                                <option value="<?php echo $p->ID; ?>" <?php echo in_array($p->ID, $excluded_ids) ? 'selected' : ''; ?>>
-                                    <?php echo esc_html($p->post_title); ?> (<?php echo ucfirst($p->post_type); ?>)
-                                </option>
+                                <label style="display:block; margin-bottom:5px;">
+                                    <input type="checkbox" name="nueva_exclude_pages[]" value="<?php echo $p->ID; ?>" <?php echo in_array($p->ID, $excluded_ids) ? 'checked' : ''; ?>>
+                                    <?php echo esc_html($p->post_title); ?>
+                                    <span style="color:#888;">(<?php echo ucfirst($p->post_type); ?>)</span>
+                                </label>
                             <?php endforeach; ?>
-                        </select>
+                        </div>
                         <p class="description">Hold Ctrl (Windows) or Command (Mac) to select multiple pages.</p>
                     </td>
                 </tr>
@@ -715,19 +756,27 @@ $visibility = $options['visibility'];
                 html += '<input type="text" name="' + fieldName + '[' + index + '][' + f + ']" placeholder="' + placeholder + '" style="' + extraStyle + '">';
             });
             html += '</div>';
+        } else if (fieldName === 'nueva_lead_fields') {
+            // Updated Lead Fields Repeater
+            style = 'margin-bottom:10px; display:flex; gap:10px; align-items:center;';
+            html += '<input type="text" name="' + fieldName + '[' + index + '][label]" placeholder="Field Label">';
+            html += '<select name="' + fieldName + '[' + index + '][type]">' +
+                '<option value="text">Text</option>' +
+                '<option value="email">Email</option>' +
+                '<option value="phone">Phone</option>' +
+                '<option value="number">Number</option>' +
+                '</select>';
+            html += '<input type="text" name="' + fieldName + '[' + index + '][purpose]" placeholder="Purpose" style="width: 250px;">';
         } else {
             // General simple row
             subFields.forEach(function (f) {
-                if (f === 'type' || f === 'platform') {
-                    // Dropdowns (simplified for JS injection, could be improved)
-                    var opts = [];
-                    if (fieldName.includes('mobile')) opts = ['support', 'sales', 'whatsapp', 'other'];
-                    if (fieldName.includes('email')) opts = ['support', 'sales', 'other'];
-                    if (fieldName.includes('social')) opts = ['facebook', 'instagram', 'linkedin', 'twitter', 'youtube', 'other'];
-
+                if (f === 'platform') { // Social still needs dropdown
+                    var opts = ['facebook', 'instagram', 'linkedin', 'twitter', 'youtube', 'other'];
                     html += '<select name="' + fieldName + '[' + index + '][' + f + ']">';
                     opts.forEach(function (o) { html += '<option value="' + o + '">' + o.charAt(0).toUpperCase() + o.slice(1) + '</option>'; });
                     html += '</select> ';
+                } else if (f === 'type') { // Mobile/Email now Text Input
+                    html += '<input type="text" name="' + fieldName + '[' + index + '][' + f + ']" placeholder="' + f.charAt(0).toUpperCase() + f.slice(1) + '" style="width: 150px;"> ';
                 } else {
                     html += '<input type="text" name="' + fieldName + '[' + index + '][' + f + ']" placeholder="' + f.charAt(0).toUpperCase() + f.slice(1) + '"> ';
                 }

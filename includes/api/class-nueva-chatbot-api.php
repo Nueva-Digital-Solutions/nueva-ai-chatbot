@@ -282,7 +282,28 @@ class Nueva_Chatbot_API
         $tone = isset($options['behavior']['tone']) ? $options['behavior']['tone'] : 'professional';
         $extra_instructions = isset($options['behavior']['agent_instructions']) ? $options['behavior']['agent_instructions'] : '';
         $enable_handoff = isset($options['behavior']['enable_handoff']) ? $options['behavior']['enable_handoff'] : false;
-        $lead_fields = isset($options['behavior']['lead_fields']) ? $options['behavior']['lead_fields'] : 'email or phone number';
+        $lead_fields_raw = isset($options['behavior']['lead_fields']) ? $options['behavior']['lead_fields'] : 'email or phone number';
+        $lead_fields = "";
+
+        if (is_array($lead_fields_raw)) {
+            $parts = array();
+            foreach ($lead_fields_raw as $f) {
+                if (!empty($f['label'])) {
+                    $desc = $f['label'];
+                    if (!empty($f['type']))
+                        $desc .= " (" . $f['type'] . ")";
+                    if (!empty($f['purpose']))
+                        $desc .= " [Purpose: " . $f['purpose'] . "]";
+                    $parts[] = $desc;
+                }
+            }
+            $lead_fields = implode(", ", $parts);
+        } else {
+            $lead_fields = $lead_fields_raw;
+        }
+
+        if (empty($lead_fields))
+            $lead_fields = "email or phone number";
 
         // Settings / Flags
         $lead_mode = isset($options['behavior']['lead_mode']) ? $options['behavior']['lead_mode'] : 'disabled';

@@ -89,8 +89,10 @@ class Nueva_Chatbot_Activator
 			id mediumint(9) NOT NULL AUTO_INCREMENT,
 			session_id varchar(100) NOT NULL,
 			rating tinyint(1) NOT NULL, -- 1-5
-			reason text DEFAULT '', -- Optional feedback text
-			category varchar(50) DEFAULT NULL, -- AI Classification: Sales, Support, etc.
+			reason text DEFAULT '', -- Optional user feedback text
+			category varchar(50) DEFAULT NULL, -- AI Classification
+			admin_rating tinyint(1) DEFAULT NULL, -- Admin review 1-5
+			admin_feedback text DEFAULT '', -- Admin suggestions for AI training
 			created_at datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
 			PRIMARY KEY  (id),
 			INDEX session_idx (session_id)

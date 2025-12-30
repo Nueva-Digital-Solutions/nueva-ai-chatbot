@@ -41,7 +41,8 @@ $leads = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
                             $data = json_decode($lead->user_data, true);
                             if ($data) {
                                 foreach ($data as $k => $v) {
-                                    echo "<strong>$k:</strong> $v<br>";
+                                    $display_val = is_scalar($v) ? $v : print_r($v, true);
+                                    echo "<strong>" . ucfirst($k) . ":</strong> " . esc_html($display_val) . "<br>";
                                 }
                             } else {
                                 echo $lead->user_data;
