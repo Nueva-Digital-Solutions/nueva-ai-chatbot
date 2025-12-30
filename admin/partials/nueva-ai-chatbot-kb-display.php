@@ -1,4 +1,16 @@
 <?php
+defined('ABSPATH') || exit;
+
+/**
+ * Partial: Knowledge Base Display
+ * 
+ * This file is included within the Nueva_Chatbot_Admin class.
+ * It runs in the WordPress admin context where functions like 
+ * check_admin_referer() and classes like WP_Query are available.
+ * 
+ * @global wpdb $wpdb
+ */
+
 // Handle Actions
 if (isset($_POST['nueva_kb_action']) && check_admin_referer('nueva_kb_verify')) {
     global $wpdb;
@@ -226,7 +238,7 @@ $items = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
                 </tr>
                 <tr>
                     <td>
-                        <submit class="button button-primary">Fetch & Save</submit>
+                        <button type="submit" class="button button-primary">Fetch & Save</button>
                     </td>
                 </tr>
             </table>
