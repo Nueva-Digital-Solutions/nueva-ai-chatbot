@@ -36,13 +36,13 @@ class Nueva_Chatbot
         require_once plugin_dir_path(__FILE__) . 'class-nueva-github-updater.php'; // Load Updater
         require_once plugin_dir_path(__FILE__) . 'class-nueva-telemetry.php'; // Load Telemetry
 
-        $this->loader = new Nueva_Chatbot_Loader();
-        $this->api = new Nueva_Chatbot_API();
-        $this->api->register_routes();
-
         // Initialize Telemetry
         $telemetry = new Nueva_Chatbot_Telemetry($this->plugin_name, $this->version);
         $telemetry->init();
+
+        $this->loader = new Nueva_Chatbot_Loader();
+        $this->api = new Nueva_Chatbot_API($telemetry); // Pass Telemetry
+        $this->api->register_routes();
 
         // Initialize GitHub Updater
         // Params: Plugin File, User, Repo

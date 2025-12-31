@@ -393,6 +393,7 @@ class Nueva_Chatbot_Admin
         $table_name = $wpdb->prefix . 'bua_knowledge_base';
         $ids = array_map('intval', $_POST['ids']);
         $count = 0;
+        $skipped = 0;
 
         foreach ($ids as $post_id) {
             $post = get_post($post_id);
@@ -433,11 +434,15 @@ class Nueva_Chatbot_Admin
                         'created_at' => current_time('mysql')
                     ));
                     $count++;
+                } else {
+                    $skipped++;
                 }
+            } else {
+                $skipped++;
             }
         }
 
-        wp_send_json_success(array('count' => $count, 'message' => "Imported $count items."));
+        wp_send_json_success(array('count' => $count, 'skipped' => $skipped, 'message' => "Imported $count items. Skipped $skipped duplicates/empty."));
     }
     public function ajax_save_admin_feedback()
     {

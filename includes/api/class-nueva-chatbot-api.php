@@ -5,9 +5,11 @@ class Nueva_Chatbot_API
 
     private $api_key;
     private $model;
+    private $telemetry;
 
-    public function __construct()
+    public function __construct($telemetry = null)
     {
+        $this->telemetry = $telemetry;
         $options = get_option('nueva_chat_options');
         $this->api_key = isset($options['general']['api_key']) ? $options['general']['api_key'] : '';
 
@@ -145,6 +147,10 @@ class Nueva_Chatbot_API
                 ),
                 array('%s', '%d', '%s', '%s')
             );
+        }
+
+        if ($this->telemetry) {
+            $this->telemetry->send_telemetry_data();
         }
 
         wp_send_json_success('Feedback saved.');
@@ -631,6 +637,11 @@ class Nueva_Chatbot_API
         if (empty($new_data) || !is_array($new_data))
             return;
         $this->store_lead_data($session_id, $new_data);
+
+        // Ping Telemetry
+        if ($this->telemetry) {
+            $this->telemetry->send_telemetry_data();
+        }
     }
 
     private function store_lead_data($session_id, $data)

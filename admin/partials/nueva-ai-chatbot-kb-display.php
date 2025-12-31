@@ -248,6 +248,7 @@ $items = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
                         <th>Type</th>
                         <th>Date Published</th>
                         <th>Link</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="scan-results-body">
@@ -405,6 +406,7 @@ $items = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
                                 '<td>' + item.type + '</td>' +
                                 '<td>' + item.date + '</td>' +
                                 '<td><a href="' + item.link + '" target="_blank">View</a></td>' +
+                                '<td><button type="button" class="button button-small btn-quick-import" data-id="' + item.id + '">Add</button></td>' +
                                 '</tr>';
                             $('#scan-results-body').append(row);
                         });
@@ -462,7 +464,9 @@ $items = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
                     $btn.prop('disabled', false);
                     $spinner.removeClass('is-active');
                     if (res.success) {
-                        alert('Success! Added ' + res.data.added + ' items to the Knowledge Base. Refreshing page...');
+                        var msg = 'Success! Added ' + res.data.count + ' items.';
+                        if(res.data.skipped > 0) msg += ' Skipped ' + res.data.skipped + ' duplicates/empty.';
+                        alert(msg + ' Refreshing page...');
                         location.reload();
                     } else {
                         alert('Error importing: ' + res.data);
@@ -472,6 +476,39 @@ $items = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
                     $btn.prop('disabled', false);
                     $spinner.removeClass('is-active');
                     alert('Network error while importing.');
+                }
+            });
+        });
+
+        // 4. Quick Import Button
+        $(document).on('click', '.btn-quick-import', function() {
+            var id = $(this).data('id');
+            var $btn = $(this);
+            $btn.text('Adding...').prop('disabled', true);
+
+            $.ajax({
+                url: nueva_admin.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'nueva_kb_scan_import',
+                    nonce: nueva_admin.nonce,
+                    ids: [id]
+                },
+                success: function(res) {
+                    if(res.success) {
+                        if(res.data.count > 0) {
+                            $btn.text('Added!');
+                        } else {
+                            $btn.text('Skipped (Dup)');
+                        }
+                    } else {
+                        alert('Error: ' + res.data);
+                        $btn.text('Error').prop('disabled', false);
+                    }
+                },
+                error: function() {
+                    alert('Network error.');
+                    $btn.text('Retry').prop('disabled', false);
                 }
             });
         });
