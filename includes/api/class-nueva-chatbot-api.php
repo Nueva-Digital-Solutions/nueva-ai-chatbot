@@ -577,7 +577,7 @@ class Nueva_Chatbot_API
         $stored_keys = is_array($stored_data) ? array_keys($stored_data) : array();
 
         foreach ($lead_fields_raw as $f) {
-            $label = exclude_special(isset($f['label']) ? $f['label'] : '');
+            $label = isset($f['label']) ? preg_replace('/[^a-zA-Z0-9 ]/', '', $f['label']) : '';
             if (!$label)
                 continue;
 
