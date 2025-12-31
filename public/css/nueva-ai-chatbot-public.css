@@ -418,3 +418,17 @@
     cursor: pointer;
     font-size: 13px;
 }
+
+/* Fix: Prevent generic button hover color change overrides from themes */
+.nueva-chat-widget button:hover {
+    color: inherit;
+}
+
+.nueva-chat-footer button#nueva-chat-send:hover {
+    color: var(--nueva-secondary, #fff);
+    /* Force correct color for send button */
+}
+
+.nueva-btn-primary:hover {
+    color: #fff !important;
+}

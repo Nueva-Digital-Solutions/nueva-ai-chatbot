@@ -1,4 +1,6 @@
 <?php
+defined('ABSPATH') || exit;
+
 // Feedback List Display
 global $wpdb;
 $table_name = $wpdb->prefix . 'bua_chat_feedback';

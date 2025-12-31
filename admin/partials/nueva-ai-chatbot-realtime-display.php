@@ -1,4 +1,6 @@
 <?php
+defined('ABSPATH') || exit;
+
 // Real Time Agent - Coming Soon Placeholder
 ?>
 

@@ -287,8 +287,18 @@ $items = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");
                                     </p>
                                     <p>
                                         <label><strong>Answer</strong></label><br>
-                                        <textarea name="faq_answer[]" class="widefat" rows="3"
-                                            required><?php echo esc_textarea($faq['a']); ?></textarea>
+                                        <?php
+                                        $answer_content = $faq['a'];
+                                        $editor_id = 'faq_answer_' . $index;
+                                        $settings = array(
+                                            'textarea_name' => 'faq_answer[' . $index . ']',
+                                            'media_buttons' => false,
+                                            'textarea_rows' => 5,
+                                            'teeny' => true,
+                                            'quicktags' => true
+                                        );
+                                        wp_editor($answer_content, $editor_id, $settings);
+                                        ?>
                                     </p>
                                     <button type="button" class="button button-link-delete remove-faq-row">Remove
                                         Question</button>

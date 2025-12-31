@@ -1,3 +1,4 @@
+<?php defined('ABSPATH') || exit; ?>
 <div class="wrap nueva-premium-wrap">
     <h1>🚀 Premium Features (Coming Soon)</h1>
     <p class="nueva-premium-intro">Upgrade your chatbot with these powerful upcoming features. These tools are designed

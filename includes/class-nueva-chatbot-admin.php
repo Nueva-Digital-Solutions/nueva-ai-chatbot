@@ -19,6 +19,13 @@ class Nueva_Chatbot_Admin
         add_action('wp_ajax_nueva_dismiss_notification', array($this, 'ajax_dismiss_notification'));
         // Admin Feedback
         add_action('wp_ajax_nueva_save_admin_feedback', array($this, 'ajax_save_admin_feedback'));
+
+        // KB Scan Hooks
+        add_action('wp_ajax_nueva_kb_scan_list', array($this, 'ajax_kb_scan_list'));
+        add_action('wp_ajax_nueva_kb_scan_import', array($this, 'ajax_kb_scan_import'));
+
+        // CSV Export
+        add_action('admin_post_nueva_export_leads', array($this, 'export_leads_csv'));
     }
 
     public function enqueue_styles()
@@ -192,19 +199,6 @@ class Nueva_Chatbot_Admin
         require_once plugin_dir_path(__FILE__) . '../admin/partials/nueva-ai-chatbot-premium-display.php';
     }
 
-    public function define_admin_hooks()
-    {
-        // ... existing hooks ...
-        add_action('wp_ajax_nueva_check_notifications', array($this, 'ajax_check_notifications'));
-        add_action('wp_ajax_nueva_dismiss_notification', array($this, 'ajax_dismiss_notification'));
-
-        // KB Scan Hooks
-        add_action('wp_ajax_nueva_kb_scan_list', array($this, 'ajax_kb_scan_list'));
-        add_action('wp_ajax_nueva_kb_scan_import', array($this, 'ajax_kb_scan_import'));
-
-        // CSV Export
-        add_action('admin_post_nueva_export_leads', array($this, 'export_leads_csv'));
-    }
 
     public function ajax_check_notifications()
     {

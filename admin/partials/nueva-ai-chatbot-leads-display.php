@@ -1,4 +1,6 @@
 <?php
+defined('ABSPATH') || exit;
+
 global $wpdb;
 $table_name = $wpdb->prefix . 'bua_leads';
 $leads = $wpdb->get_results("SELECT * FROM $table_name ORDER BY id DESC");

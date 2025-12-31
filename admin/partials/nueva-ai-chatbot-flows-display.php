@@ -1,4 +1,6 @@
 <?php
+defined('ABSPATH') || exit;
+
 global $wpdb;
 $table_name = $wpdb->prefix . 'bua_chat_flows';
 

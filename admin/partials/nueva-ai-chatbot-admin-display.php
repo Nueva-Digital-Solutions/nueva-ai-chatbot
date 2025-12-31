@@ -1,4 +1,6 @@
 <?php
+defined('ABSPATH') || exit;
+
 $options = get_option('nueva_chat_options', array(
     'general' => array('api_key' => '', 'agent_name' => 'Nueva Agent', 'model' => 'gemini-2.5-flash'),
     'appearance' => array('primary_color' => '#0073aa', 'secondary_color' => '#ffffff', 'font_family' => 'Roboto', 'font_size' => '16', 'position_desktop' => 'right', 'position_mobile' => 'right', 'profile_image' => ''),

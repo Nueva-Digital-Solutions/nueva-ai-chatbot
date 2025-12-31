@@ -22,6 +22,9 @@ class Nueva_Chatbot_Updater
         add_filter('plugins_api', array($this, 'plugin_info'), 20, 3);
 
         // Populate plugin data
+        if (!function_exists('get_plugin_data')) {
+            require_once(ABSPATH . 'wp-admin/includes/plugin.php');
+        }
         $this->plugin_data = get_plugin_data($plugin_file);
         // Slug should be the folder/filename e.g. nueva-ai-chatbot/nueva-ai-chatbot.php
         $this->slug = plugin_basename($plugin_file);

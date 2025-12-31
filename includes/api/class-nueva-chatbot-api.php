@@ -382,14 +382,17 @@ class Nueva_Chatbot_API
                 $system_prompt .= "\n[RULE: LEAD GENERATION]\n";
                 $system_prompt .= "IF User Status is GUEST (or Lead Info is Missing):\n";
                 $system_prompt .= "- Your GOAL is to collect these fields ONE BY ONE: [$lead_fields].\n";
+                $system_prompt .= "- When a user provides ANY of these details, you MUST output a hidden JSON tag at the start of your response:\n";
+                $system_prompt .= "  [SAVE_LEAD] {\"field_name\": \"value\"} [/SAVE_LEAD]\n";
+                $system_prompt .= "  Example: User says 'My city is New York', you output: [SAVE_LEAD] {\"city\": \"New York\"} [/SAVE_LEAD] Great, I love New York!\n";
                 $system_prompt .= "- VALIDATION: Check each input. \n";
-                $system_prompt .= "  * Email MUST look like an email (user@domain). If invalid, say 'That doesn't look right. Please enter a valid email.'\n";
-                $system_prompt .= "  * Phone MUST contain digits. If text only, reject it.\n";
-                $system_prompt .= "- Once all fields are collected, proceed to answer their question.\n";
+                $system_prompt .= "  * Email MUST look like an email. \n";
+                $system_prompt .= "  * Phone MUST contain digits.\n";
+                $system_prompt .= "- Once all fields ($lead_fields) are collected, proceed to answer their question.\n";
                 $system_prompt .= "- during this collection phase, do NOT output [SUGGESTIONS].\n";
             }
         } elseif ($lead_mode === 'conversational' && $has_leads) {
-            $system_prompt .= "\n[RULE: LEAD GENERATION] Lead info has already been collected. Do NOT ask for it again.\n";
+            $system_prompt .= "\n[RULE: LEAD GENERATION] Lead info has already been collected. Do NOT ask for it again. Proceed to answer user questions.\n";
         }
 
         $system_prompt .= "
@@ -462,7 +465,20 @@ class Nueva_Chatbot_API
         }
 
         if (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
-            return $data['candidates'][0]['content']['parts'][0]['text'];
+            $reply = $data['candidates'][0]['content']['parts'][0]['text'];
+
+            // Parse [SAVE_LEAD] tag
+            if (preg_match('/\[SAVE_LEAD\](.*?)\[\/SAVE_LEAD\]/s', $reply, $matches)) {
+                $json_str = trim($matches[1]);
+                $lead_data = json_decode($json_str, true);
+                if ($json_str && $lead_data) {
+                    $this->capture_smart_lead($session_id, $lead_data); // New helper
+                }
+                // Remove tag from reply
+                $reply = str_replace($matches[0], '', $reply);
+            }
+
+            return trim($reply);
         }
 
         return "I didn't understand that. Could you rephrase?";
@@ -506,12 +522,65 @@ class Nueva_Chatbot_API
         return false;
     }
 
-    private function has_lead_info($session_id)
+    private function get_missing_lead_fields($session_id)
     {
+        $missing = array();
+
+        // Get Configured Fields
+        $options = get_option('nueva_chat_options');
+        $lead_fields_raw = isset($options['behavior']['lead_fields']) ? $options['behavior']['lead_fields'] : [];
+
+        // If no custom fields, fallback to minimal defaults? 
+        // Or if empty, nothing to collect.
+        if (empty($lead_fields_raw))
+            return array();
+
+        // Get Saved Data
         global $wpdb;
         $table_name = $wpdb->prefix . 'bua_leads';
-        $lead = $wpdb->get_row($wpdb->prepare("SELECT id FROM $table_name WHERE chat_session_id = %s", $session_id));
-        return !empty($lead);
+        $lead = $wpdb->get_row($wpdb->prepare("SELECT user_data FROM $table_name WHERE chat_session_id = %s", $session_id));
+
+        $stored_data = array();
+        if ($lead && !empty($lead->user_data)) {
+            $stored_data = json_decode($lead->user_data, true);
+        }
+        $stored_keys = is_array($stored_data) ? array_keys($stored_data) : array();
+
+        foreach ($lead_fields_raw as $f) {
+            $label = exclude_special(isset($f['label']) ? $f['label'] : '');
+            if (!$label)
+                continue;
+
+            $normalized_label = strtolower($label);
+
+            // Standard Normalization
+            if (stripos($normalized_label, 'email') !== false)
+                $normalized_label = 'email';
+            elseif (stripos($normalized_label, 'phone') !== false)
+                $normalized_label = 'phone';
+            elseif (stripos($normalized_label, 'name') !== false)
+                $normalized_label = 'name';
+
+            $found = false;
+            foreach ($stored_keys as $k) {
+                // Check if stored key matches normalized label
+                if (stripos($k, $normalized_label) !== false || stripos($normalized_label, $k) !== false) {
+                    $found = true;
+                    break;
+                }
+            }
+
+            if (!$found) {
+                $missing[] = $label;
+            }
+        }
+        return $missing;
+    }
+
+    private function has_lead_info($session_id)
+    {
+        $missing = $this->get_missing_lead_fields($session_id);
+        return empty($missing);
     }
 
     private function add_admin_notification($session_id, $message)
@@ -533,51 +602,60 @@ class Nueva_Chatbot_API
 
     private function capture_lead($session_id, $message)
     {
+        // Legacy Regex Capture (Backwards compatibility & Failsafe)
         global $wpdb;
         $table_name = $wpdb->prefix . 'bua_leads';
 
-        // 1. Auto-Capture Logged In User (if not exists)
         if (is_user_logged_in()) {
-            $user = wp_get_current_user();
-            $existing = $wpdb->get_row($wpdb->prepare("SELECT id, user_data FROM $table_name WHERE chat_session_id = %s", $session_id));
-
-            if (!$existing) {
-                // Create initial lead from WP Account
-                $account_data = array(
-                    'name' => $user->display_name,
-                    'email' => $user->user_email,
-                    'is_logged_in' => true
-                );
-                $wpdb->insert($table_name, array('chat_session_id' => $session_id, 'user_data' => json_encode($account_data), 'collected_at' => current_time('mysql'), 'is_synced' => 0));
-                // We return here? No, look for phone in message too.
-            }
+            // ... (existing logged in logic kept elsewhere or here if needed, but smart capture handles most now)
+            // Keeping minimal fallback
         }
 
-        // 2. Parse Message for Email/Phone
         preg_match('/[a-z0-9_\-\+\.]+@[a-z0-9\-]+\.([a-z]{2,4})(?:\.[a-z]{2})?/i', $message, $email_matches);
-
-        // Sanitize for Phone: Remove spaces, dashes, parens
         $clean_msg = preg_replace('/[^0-9]/', '', $message);
-        // Look for 10-15 digits
         preg_match('/\d{10,15}/', $clean_msg, $phone_matches);
 
         $data = array();
         if (!empty($email_matches[0]))
             $data['email'] = $email_matches[0];
         if (!empty($phone_matches[0]))
-            $data['phone'] = $phone_matches[0]; // Stores raw digits
+            $data['phone'] = $phone_matches[0];
 
         if (!empty($data)) {
-            $existing = $wpdb->get_row($wpdb->prepare("SELECT user_data FROM $table_name WHERE chat_session_id = %s", $session_id));
-            if ($existing) {
-                $existing_data = json_decode($existing->user_data, true);
-                if (!is_array($existing_data))
-                    $existing_data = array();
-                $new_data = array_merge($existing_data, $data);
-                $wpdb->update($table_name, array('user_data' => json_encode($new_data)), array('chat_session_id' => $session_id));
-            } else {
-                $wpdb->insert($table_name, array('chat_session_id' => $session_id, 'user_data' => json_encode($data), 'collected_at' => current_time('mysql'), 'is_synced' => 0));
-            }
+            $this->store_lead_data($session_id, $data);
+        }
+    }
+
+    private function capture_smart_lead($session_id, $new_data)
+    {
+        if (empty($new_data) || !is_array($new_data))
+            return;
+        $this->store_lead_data($session_id, $new_data);
+    }
+
+    private function store_lead_data($session_id, $data)
+    {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'bua_leads';
+
+        $existing = $wpdb->get_row($wpdb->prepare("SELECT user_data FROM $table_name WHERE chat_session_id = %s", $session_id));
+
+        if ($existing) {
+            $existing_data = json_decode($existing->user_data, true);
+            if (!is_array($existing_data))
+                $existing_data = array();
+
+            // Merge: New data overrides old keys, keeps others
+            $merged_data = array_merge($existing_data, $data);
+
+            $wpdb->update($table_name, array('user_data' => json_encode($merged_data)), array('chat_session_id' => $session_id));
+        } else {
+            $wpdb->insert($table_name, array(
+                'chat_session_id' => $session_id,
+                'user_data' => json_encode($data),
+                'collected_at' => current_time('mysql'),
+                'is_synced' => 0
+            ));
         }
     }
 

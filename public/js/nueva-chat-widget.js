@@ -399,6 +399,9 @@ jQuery(document).ready(function ($) {
     }
 
     function submitFeedback(rating, reason) {
+        var $btn = $('#feedback-submit');
+        $btn.prop('disabled', true).text('Submitting...');
+
         $.post(nueva_chat_vars.ajax_url, {
             action: 'nueva_submit_feedback',
             session_id: session_id,
@@ -406,7 +409,11 @@ jQuery(document).ready(function ($) {
             reason: reason,
             nonce: nueva_chat_vars.nonce
         }, function () {
+            $btn.text('Submitted!');
             endSessionFinal();
+        }).fail(function () {
+            $btn.prop('disabled', false).text('Try Again');
+            alert('Connection failed. Please try again.');
         });
     }
 
