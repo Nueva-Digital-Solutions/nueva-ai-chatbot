@@ -169,6 +169,57 @@ class Nueva_Chatbot_Admin
 
     public function display_kb_page()
     {
+        // Handle FAQ Save
+        if (isset($_POST['nueva_kb_action']) && $_POST['nueva_kb_action'] === 'save_faq_builder' && check_admin_referer('nueva_kb_verify')) {
+            $questions = isset($_POST['faq_question']) ? $_POST['faq_question'] : [];
+            $answers = isset($_POST['faq_answer']) ? $_POST['faq_answer'] : [];
+
+            $items = [];
+            if (is_array($questions)) {
+                foreach ($questions as $i => $q) {
+                    $q = sanitize_text_field($q);
+                    $a = isset($answers[$i]) ? wp_kses_post($answers[$i]) : ''; // Allow HTML in answer
+                    if (!empty($q)) {
+                        $items[] = array('q' => $q, 'a' => $a);
+                    }
+                }
+            }
+
+            // Styling
+            $style = array(
+                'title_color' => sanitize_hex_color($_POST['style_title_color']),
+                'title_size' => intval($_POST['style_title_size']),
+                'bg_color' => sanitize_hex_color($_POST['style_bg_color']),
+                'padding' => intval($_POST['style_padding']),
+                'spacing' => intval($_POST['style_spacing']),
+            );
+
+            $data = array('items' => $items, 'style' => $style);
+            update_option('nueva_faq_data', $data);
+
+            // SYNC TO KB TABLE
+            global $wpdb;
+            $table_name = $wpdb->prefix . 'bua_knowledge_base';
+
+            // 1. Remove old FAQ entries from KB to prevent duplicates
+            $wpdb->delete($table_name, array('type' => 'manual_faq'), array('%s'));
+
+            // 2. Insert new
+            foreach ($items as $item) {
+                // Determine format
+                $content = "FAQ: " . $item['q'] . "\nAnswer: " . strip_tags($item['a']); // AI prefers plain text usually, or minimal HTML
+
+                $wpdb->insert($table_name, array(
+                    'type' => 'manual_faq',
+                    'source_ref' => 'FAQ Builder',
+                    'content' => $content,
+                    'created_at' => current_time('mysql')
+                ));
+            }
+
+            echo '<div class="notice notice-success is-dismissible"><p>FAQs saved and synced to Knowledge Base!</p></div>';
+        }
+
         require_once plugin_dir_path(__FILE__) . '../admin/partials/nueva-ai-chatbot-kb-display.php';
     }
 

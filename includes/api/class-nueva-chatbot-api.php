@@ -218,40 +218,58 @@ class Nueva_Chatbot_API
 
     public function handle_ajax_request()
     {
-        check_ajax_referer('nueva_chat_nonce', 'nonce');
+        // Prevent PHP warnings breaking JSON
+        @ini_set('display_errors', 0);
 
-        $message = sanitize_text_field($_POST['message']);
-        $session_id = isset($_POST['session_id']) ? sanitize_text_field($_POST['session_id']) : '';
-
-        // Attachment Handling
-        $attachment = null;
-        if (isset($_POST['attachment_path']) && !empty($_POST['attachment_path'])) {
-            $attachment = array(
-                'path' => sanitize_text_field($_POST['attachment_path']),
-                'mime' => sanitize_text_field($_POST['attachment_mime']),
-                'url' => isset($_POST['attachment_url']) ? esc_url_raw($_POST['attachment_url']) : ''
-            );
-        }
-
-        // Capture Leads
-        if ($session_id) {
-            $this->capture_lead($session_id, $message);
-            // Modify saved message to include attachment link if present
-            $save_msg = $message;
-            if ($attachment) {
-                $save_msg .= " [Attachment: " . $attachment['url'] . "]";
+        try {
+            if (!check_ajax_referer('nueva_chat_nonce', 'nonce', false)) {
+                wp_send_json_error('Security check failed (Nonce). Refresh page.');
+                return;
             }
-            $this->save_message($session_id, 'user', $save_msg);
+
+            $message = sanitize_text_field($_POST['message']);
+            $session_id = isset($_POST['session_id']) ? sanitize_text_field($_POST['session_id']) : '';
+
+            // Attachment Handling
+            $attachment = null;
+            if (isset($_POST['attachment_path']) && !empty($_POST['attachment_path'])) {
+                $attachment = array(
+                    'path' => sanitize_text_field($_POST['attachment_path']),
+                    'mime' => sanitize_text_field($_POST['attachment_mime']),
+                    'url' => isset($_POST['attachment_url']) ? esc_url_raw($_POST['attachment_url']) : ''
+                );
+            }
+
+            // Capture Leads
+            if ($session_id) {
+                // Wrap lead capture in try-catch to be safe
+                try {
+                    $this->capture_lead($session_id, $message);
+                } catch (Exception $e) {
+                    error_log("Nueva Chatbot Lead Capture Error: " . $e->getMessage());
+                }
+
+                // Modify saved message to include attachment link if present
+                $save_msg = $message;
+                if ($attachment) {
+                    $save_msg .= " [Attachment: " . $attachment['url'] . "]";
+                }
+                $this->save_message($session_id, 'user', $save_msg);
+            }
+
+            $response = $this->query_gemini($message, $session_id, $attachment);
+
+            // Save Bot Message
+            if ($session_id) {
+                $this->save_message($session_id, 'bot', $response);
+            }
+
+            wp_send_json_success(array('reply' => $response));
+
+        } catch (Exception $e) {
+            error_log("Nueva Chatbot Critical Error: " . $e->getMessage());
+            wp_send_json_error('Server Error: ' . $e->getMessage());
         }
-
-        $response = $this->query_gemini($message, $session_id, $attachment);
-
-        // Save Bot Message
-        if ($session_id) {
-            $this->save_message($session_id, 'bot', $response);
-        }
-
-        wp_send_json_success(array('reply' => $response));
     }
 
     public function handle_chat_request($request)
