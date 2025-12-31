@@ -221,20 +221,14 @@ class Nueva_Chatbot_API
         // Prevent PHP warnings breaking JSON
         @ini_set('display_errors', 0);
 
-        error_log("Nueva Chatbot: AJAX Request Received");
-
         try {
             if (!check_ajax_referer('nueva_chat_nonce', 'nonce', false)) {
-                error_log("Nueva Chatbot: Nonce Verification Failed");
                 wp_send_json_error('Security check failed (Nonce). Refresh page.');
                 return;
             }
-            error_log("Nueva Chatbot: Nonce Verified");
 
             $message = sanitize_text_field($_POST['message']);
             $session_id = isset($_POST['session_id']) ? sanitize_text_field($_POST['session_id']) : '';
-
-            error_log("Nueva Chatbot: Processing message for Session ID: " . $session_id);
 
             // Attachment Handling
             $attachment = null;
